@@ -15,10 +15,14 @@ namespace ServiceTrackingSystem.Models
         public string Surname { get; set; }
 
         [ForeignKey("Driver")]
-        public string? DriverId { get; set; }  
+        public int? DriverId { get; set; }  
         public virtual Driver? Driver { get; set; }
 
         public List<EmployeeAddress> Addresses { get; set; } = new();
-        public List<RouteAssignment> RouteAssignments { get; set; } = new();
+        [ForeignKey("RouteAssignment")]
+        public int? RouteAssignmentId { get; set; } 
+
+        public virtual RouteAssignment? RouteAssignment { get; set; } 
+
     }
 }

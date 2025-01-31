@@ -9,7 +9,7 @@ namespace ServiceTrackingSystem.Models
     {
         [Required]
         [ForeignKey("Driver")]
-        public string DriverId { get; set; }
+        public int DriverId { get; set; }
 
         public DateTime RouteDate { get; set; }
 

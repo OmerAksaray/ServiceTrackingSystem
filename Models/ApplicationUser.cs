@@ -1,11 +1,12 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ServiceTrackingSystem.Models
 {
-    public class ApplicationUser : IdentityUser
+    public class ApplicationUser : IdentityUser<int> 
     {
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)] 
-        public int EmployeeId { get; set; } 
+        [NotMapped] 
+        public int EmployeeId => Id;
     }
 }

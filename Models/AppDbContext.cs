@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ServiceTrackingSystem.Models
 {
-    public class AppDbContext : IdentityDbContext<ApplicationUser>
+    public class AppDbContext : IdentityDbContext<ApplicationUser, IdentityRole<int>, int> 
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -17,17 +17,20 @@ namespace ServiceTrackingSystem.Models
         {
             base.OnModelCreating(builder);
 
-            // Driver ve RouteAssignment arasında 1-1 ilişki
+
+            // Driver-RouteAssignment ilişkisi
             builder.Entity<RouteAssignment>()
                 .HasOne(r => r.Driver)
                 .WithOne(d => d.RouteAssignment)
                 .HasForeignKey<RouteAssignment>(r => r.DriverId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // RouteAssignment -> Employees (1-N)
+            // RouteAssignment - Employee ilişkisi (Bir Route birden çok Employee'ye atanabilir, ama bir Employee yalnızca bir Route'a sahip olabilir.)
             builder.Entity<RouteAssignment>()
                 .HasMany(r => r.Employees)
-                .WithMany(e => e.RouteAssignments);
+                .WithOne(e => e.RouteAssignment)
+                .HasForeignKey(e => e.RouteAssignmentId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

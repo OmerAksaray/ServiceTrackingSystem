@@ -17,6 +17,7 @@ using ServiceTrackingSystem.Models;
 
 namespace ServiceTrackingSystem.Areas.Identity.Pages.Account
 {
+    [AllowAnonymous]
     public class ForgotPasswordModel : PageModel
     {
         private readonly UserManager<ApplicationUser> _userManager;
@@ -54,38 +55,39 @@ namespace ServiceTrackingSystem.Areas.Identity.Pages.Account
         {
             if (ModelState.IsValid)
             {
-                Console.WriteLine("Forgot Password işlemi başladı...");
-
                 var user = await _userManager.FindByEmailAsync(Input.Email);
                 if (user == null || !(await _userManager.IsEmailConfirmedAsync(user)))
                 {
-                    Console.WriteLine("Kullanıcı bulunamadı veya e-posta onaylanmamış.");
+                    // Don't reveal that the user does not exist or is not confirmed
                     return RedirectToPage("./ForgotPasswordConfirmation");
                 }
 
-                try
-                {
-                    Console.WriteLine("Şifre sıfırlama tokeni oluşturuluyor...");
-                    var code = await _userManager.GeneratePasswordResetTokenAsync(user);
-                    code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+                // For more information on how to enable account confirmation and password reset please 
+                // visit https://go.microsoft.com/fwlink/?LinkID=532713
+                var code = await _userManager.GeneratePasswordResetTokenAsync(user);
+                code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+                var callbackUrl = Url.Page(
+                    "/Account/ResetPassword",
+                    pageHandler: null,
+                    values: new { area = "Identity", code },
+                    protocol: Request.Scheme);
 
-                    Console.WriteLine("E-posta gönderme metodu çağırılıyor...");
-                    await _emailSender.SendEmailAsync(Input.Email, "Reset Password",
-                        $"Please reset your password by <a href='{HtmlEncoder.Default.Encode(code)}'>clicking here</a>.");
+                var emailBody = $@"
+                    <h2>Şifre Sıfırlama</h2>
+                    <p>Şifrenizi sıfırlamak için lütfen aşağıdaki bağlantıya tıklayın:</p>
+                    <p><a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>Şifremi Sıfırla</a></p>
+                    <p>Eğer şifre sıfırlama talebinde bulunmadıysanız, bu e-postayı görmezden gelebilirsiniz.</p>
+                    <p>Güvenliğiniz için bu bağlantı 3 saat sonra geçerliliğini yitirecektir.</p>";
 
-                    Console.WriteLine("E-posta gönderildi!");
-                    return RedirectToPage("./ForgotPasswordConfirmation");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"E-posta gönderilirken hata oluştu: {ex.Message}");
-                    ModelState.AddModelError(string.Empty, "Error sending email. Please try again later.");
-                    return Page();
-                }
+                await _emailSender.SendEmailAsync(
+                    Input.Email,
+                    "Şifre Sıfırlama",
+                    emailBody);
+
+                return RedirectToPage("./ForgotPasswordConfirmation");
             }
 
             return Page();
         }
-
     }
 }

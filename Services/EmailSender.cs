@@ -12,6 +12,7 @@ namespace ServiceTrackingSystem.Services
         private readonly int _smtpPort;
         private readonly string _emailFrom;
         private readonly string _emailPassword;
+        private readonly string _baseUrl;
 
         public EmailSender(IConfiguration configuration)
         {
@@ -19,6 +20,7 @@ namespace ServiceTrackingSystem.Services
             _smtpPort = int.Parse(configuration["EmailSettings:SmtpPort"] ?? throw new ArgumentNullException(nameof(configuration)));
             _emailFrom = configuration["EmailSettings:EmailFrom"] ?? throw new ArgumentNullException(nameof(configuration));
             _emailPassword = configuration["EmailSettings:EmailPassword"] ?? throw new ArgumentNullException(nameof(configuration));
+            _baseUrl = configuration["ApplicationSettings:BaseUrl"] ?? throw new ArgumentNullException(nameof(configuration));
         }
 
         public async Task SendEmailAsync(string email, string subject, string htmlMessage)
@@ -40,6 +42,8 @@ namespace ServiceTrackingSystem.Services
 
                     mailMessage.To.Add(email);
 
+
+                    mailMessage.Body = htmlMessage;
                     await client.SendMailAsync(mailMessage);
                 }
             }
