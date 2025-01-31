@@ -1,11 +1,21 @@
-﻿namespace ServiceTrackingSystem.Models
-{
-    public class RouteAssignment:BaseEntity
-    {
-        public int DriverId { get; set; }
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-        public int EmployeeId { get; set; }
+namespace ServiceTrackingSystem.Models
+{
+    public class RouteAssignment : BaseEntity
+    {
+        [Required]
+        [ForeignKey("Driver")]
+        public string DriverId { get; set; }
 
         public DateTime RouteDate { get; set; }
+
+        public virtual Driver Driver { get; set; }
+
+        public virtual List<Employee> Employees { get; set; } = new();
+
     }
 }

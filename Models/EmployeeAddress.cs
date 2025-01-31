@@ -1,4 +1,7 @@
-﻿namespace ServiceTrackingSystem.Models
+﻿using Microsoft.AspNetCore.Identity;
+
+namespace ServiceTrackingSystem.Models
+
 {
     public class EmployeeAddress : BaseEntity
     {
