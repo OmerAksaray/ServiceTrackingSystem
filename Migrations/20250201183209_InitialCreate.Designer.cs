@@ -12,7 +12,7 @@ using ServiceTrackingSystem.Models;
 namespace ServiceTrackingSystem.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250201114955_InitialCreate")]
+    [Migration("20250201183209_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -191,6 +191,10 @@ namespace ServiceTrackingSystem.Migrations
                     b.Property<DateTimeOffset?>("LockoutEnd")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("NormalizedEmail")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
@@ -211,12 +215,20 @@ namespace ServiceTrackingSystem.Migrations
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Surname")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("bit");
 
                     b.Property<string>("UserName")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("UserType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -305,14 +317,6 @@ namespace ServiceTrackingSystem.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Surname")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<DateTime>("UpdatedDate")
                         .HasColumnType("datetime2");
 
@@ -323,19 +327,17 @@ namespace ServiceTrackingSystem.Migrations
                 {
                     b.HasBaseType("ServiceTrackingSystem.Models.ApplicationUser");
 
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<int?>("DriverId")
                         .HasColumnType("int");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("RouteAssignmentId")
                         .HasColumnType("int");
 
-                    b.Property<string>("Surname")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
 
                     b.HasIndex("DriverId");
 
@@ -343,11 +345,11 @@ namespace ServiceTrackingSystem.Migrations
 
                     b.ToTable("AspNetUsers", t =>
                         {
-                            t.Property("Name")
-                                .HasColumnName("Employee_Name");
+                            t.Property("CreatedDate")
+                                .HasColumnName("Employee_CreatedDate");
 
-                            t.Property("Surname")
-                                .HasColumnName("Employee_Surname");
+                            t.Property("UpdatedDate")
+                                .HasColumnName("Employee_UpdatedDate");
                         });
 
                     b.HasDiscriminator().HasValue("Employee");

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
+using ServiceTrackingSystem.Migrations;
 using ServiceTrackingSystem.Models;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
@@ -91,15 +92,19 @@ namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
                     Email = Input.Email,
                     Name = Input.Name,
                     Surname = Input.Surname,
-                    UserType = "Employee"
+                    UserType = "EMPLOYEE",
+                    CreatedDate = DateTime.Now,
+                    UpdatedDate = DateTime.Now,
                 };
+
 
                 var result = await _userManager.CreateAsync(employee, Input.Password);
 
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User created a new account with password.");
-                    await _userManager.AddToRoleAsync(employee, "Employee");
+
+                _userManager.AddToRoleAsync(employee, employee.UserType);
 
                     var userId = await _userManager.GetUserIdAsync(employee);
                     var code = await _userManager.GenerateEmailConfirmationTokenAsync(employee);

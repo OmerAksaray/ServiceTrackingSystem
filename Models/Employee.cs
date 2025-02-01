@@ -8,11 +8,6 @@ namespace ServiceTrackingSystem.Models
 {
     public class Employee : ApplicationUser
     {
-        [Required]
-        public string Name { get; set; }
-
-        [Required]
-        public string Surname { get; set; }
 
         [ForeignKey("Driver")]
         public int? DriverId { get; set; }  
@@ -22,7 +17,8 @@ namespace ServiceTrackingSystem.Models
         [ForeignKey("RouteAssignment")]
         public int? RouteAssignmentId { get; set; } 
 
-        public virtual RouteAssignment? RouteAssignment { get; set; } 
+        public virtual RouteAssignment? RouteAssignment { get; set; }
+
 
     }
 }

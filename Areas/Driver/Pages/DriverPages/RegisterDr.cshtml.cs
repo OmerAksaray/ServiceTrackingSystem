@@ -30,6 +30,7 @@ namespace ServiceTrackingSystem.Areas.Driver.Pages.DriverPages
         private readonly ILogger<RegisterModelDr> _logger;
         private readonly IEmailSender _emailSender;
         private readonly AppDbContext _context;
+        private readonly RoleManager<ApplicationUser> _roleManager;
 
         public RegisterModelDr(
             UserManager<ApplicationUser> userManager,
@@ -37,6 +38,7 @@ namespace ServiceTrackingSystem.Areas.Driver.Pages.DriverPages
             SignInManager<ApplicationUser> signInManager,
             ILogger<RegisterModelDr> logger,
             IEmailSender emailSender,
+            RoleManager<ApplicationUser> roleManager,
             AppDbContext context)
         {
             _userManager = userManager;
@@ -46,6 +48,7 @@ namespace ServiceTrackingSystem.Areas.Driver.Pages.DriverPages
             _logger = logger;
             _emailSender = emailSender;
             _context = context;
+            _roleManager = roleManager;
         }
 
         [BindProperty]
@@ -109,17 +112,18 @@ namespace ServiceTrackingSystem.Areas.Driver.Pages.DriverPages
                     Name = Input.Name,
                     Surname = Input.Surname,
                     LicenseNumber = Input.LicenseNumber,
-                    UserType = "Driver",
+                    UserType = "DRIVER",
                     CreatedDate = DateTime.UtcNow,
                     UpdatedDate = DateTime.UtcNow
                 };
 
+                
                 var result = await _userManager.CreateAsync(driver, Input.Password);
 
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User created a new account with password.");
-                    await _userManager.AddToRoleAsync(driver, "Driver");
+                _userManager.AddToRoleAsync(driver, driver.UserType);
 
                     var userId = await _userManager.GetUserIdAsync(driver);
                     var code = await _userManager.GenerateEmailConfirmationTokenAsync(driver);
