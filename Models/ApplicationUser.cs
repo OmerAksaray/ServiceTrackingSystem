@@ -8,5 +8,7 @@ namespace ServiceTrackingSystem.Models
     {
         [NotMapped] 
         public int EmployeeId => Id;
+
+        public string UserType {  get; set; }
     }
 }

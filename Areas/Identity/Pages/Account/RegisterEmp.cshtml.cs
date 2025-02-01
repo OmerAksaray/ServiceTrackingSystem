@@ -22,20 +22,20 @@ using ServiceTrackingSystem.Models;
 
 namespace ServiceTrackingSystem.Areas.Identity.Pages.Account
 {
-    public class RegisterModel : PageModel
+    public class RegisterModelEmp : PageModel
     {
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IUserStore<ApplicationUser> _userStore;
         private readonly IUserEmailStore<ApplicationUser> _emailStore;
-        private readonly ILogger<RegisterModel> _logger;
+        private readonly ILogger<RegisterModelEmp> _logger;
         private readonly IEmailSender _emailSender;
 
-        public RegisterModel(
+        public RegisterModelEmp(
             UserManager<ApplicationUser> userManager,
             IUserStore<ApplicationUser> userStore,
             SignInManager<ApplicationUser> signInManager,
-            ILogger<RegisterModel> logger,
+            ILogger<RegisterModelEmp> logger,
             IEmailSender emailSender)
         {
             _userManager = userManager;
@@ -98,13 +98,19 @@ namespace ServiceTrackingSystem.Areas.Identity.Pages.Account
             [Display(Name = "Confirm password")]
             [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
             public string ConfirmPassword { get; set; }
+
+
+            public string Role { get; set; }
         }
 
 
         public async Task OnGetAsync(string returnUrl = null)
         {
+
             ReturnUrl = returnUrl;
+           
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+
         }
 
         public async Task<IActionResult> OnPostAsync(string returnUrl = null)

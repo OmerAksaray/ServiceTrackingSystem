@@ -12,7 +12,7 @@ using ServiceTrackingSystem.Models;
 namespace ServiceTrackingSystem.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250131170451_InitialCreate")]
+    [Migration("20250201114955_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
