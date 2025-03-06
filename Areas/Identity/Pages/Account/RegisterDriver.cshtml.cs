@@ -22,20 +22,20 @@ using ServiceTrackingSystem.Models;
 
 namespace ServiceTrackingSystem.Areas.Identity.Pages.Account
 {
-    public class RegisterModelEmp : PageModel
+    public class RegisterDriverModel : PageModel
     {
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IUserStore<ApplicationUser> _userStore;
         private readonly IUserEmailStore<ApplicationUser> _emailStore;
-        private readonly ILogger<RegisterModelEmp> _logger;
+        private readonly ILogger<RegisterDriverModel> _logger;
         private readonly IEmailSender _emailSender;
 
-        public RegisterModelEmp(
+        public RegisterDriverModel(
             UserManager<ApplicationUser> userManager,
             IUserStore<ApplicationUser> userStore,
             SignInManager<ApplicationUser> signInManager,
-            ILogger<RegisterModelEmp> logger,
+            ILogger<RegisterDriverModel> logger,
             IEmailSender emailSender)
         {
             _userManager = userManager;
@@ -71,6 +71,14 @@ namespace ServiceTrackingSystem.Areas.Identity.Pages.Account
         /// </summary>
         public class InputModel
         {
+            [Required]
+            [Display(Name = "Name")]
+            public string Name { get; set; }
+            
+            [Required]
+            [Display(Name = "Surname")]
+            public string Surname { get; set; }
+            
             /// <summary>
             ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
             ///     directly from your code. This API may change or be removed in future releases.
@@ -98,21 +106,12 @@ namespace ServiceTrackingSystem.Areas.Identity.Pages.Account
             [Display(Name = "Confirm password")]
             [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
             public string ConfirmPassword { get; set; }
-
-            public string Name { get; set; }
-            public string Surname { get; set; }
-
-            public string Role { get; set; }
         }
-
 
         public async Task OnGetAsync(string returnUrl = null)
         {
-
             ReturnUrl = returnUrl;
-           
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
-
         }
 
         public async Task<IActionResult> OnPostAsync(string returnUrl = null)
@@ -122,9 +121,9 @@ namespace ServiceTrackingSystem.Areas.Identity.Pages.Account
             if (ModelState.IsValid)
             {
                 var user = CreateUser();
-                user.UserType = "Employee";
-                user.Name = Input.Name ?? "";
-                user.Surname = Input.Surname ?? "";
+                user.UserType = "Driver";
+                user.Name = Input.Name;
+                user.Surname = Input.Surname;
 
                 await _userStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
                 await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
@@ -135,7 +134,7 @@ namespace ServiceTrackingSystem.Areas.Identity.Pages.Account
                     _logger.LogInformation("User created a new account with password.");
 
                     // Add a UserType claim to the user
-                    await _userManager.AddClaimAsync(user, new System.Security.Claims.Claim("UserType", "Employee"));
+                    await _userManager.AddClaimAsync(user, new System.Security.Claims.Claim("UserType", "Driver"));
 
                     var userId = await _userManager.GetUserIdAsync(user);
                     var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
@@ -156,7 +155,7 @@ namespace ServiceTrackingSystem.Areas.Identity.Pages.Account
                     else
                     {
                         await _signInManager.SignInAsync(user, isPersistent: false);
-                        return RedirectToPage("/EmployeePages/HomePageEmp", new { area = "Employee" });
+                        return RedirectToPage("/DriverPages/Dashboard", new { area = "Driver" });
                     }
                 }
                 foreach (var error in result.Errors)

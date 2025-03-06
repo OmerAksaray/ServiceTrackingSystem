@@ -125,6 +125,10 @@
                         streetSelect.disabled = true;
                         neighborhoodSelect.innerHTML = '<option value="">Select Neighborhood</option>';
                         streetSelect.innerHTML = '<option value="">Select Street</option>';
+                    })
+                    .catch(error => {
+                        console.error('Error loading districts:', error);
+                        districtSelect.innerHTML = '<option value="">Error loading districts</option>';
                     });
             } else {
                 districtSelect.disabled = true;
@@ -145,7 +149,7 @@
             const selectedCityId = citySelect.value;
             const selectedDistrict = districtSelect.value;
             
-            if (selectedDistrict) {
+            if (selectedCityId && selectedDistrict) {
                 fetch(`?handler=Neighborhoods&cityId=${selectedCityId}&district=${encodeURIComponent(selectedDistrict)}`)
                     .then(response => response.json())
                     .then(data => {
@@ -159,6 +163,10 @@
                         neighborhoodSelect.disabled = false;
                         streetSelect.disabled = true;
                         streetSelect.innerHTML = '<option value="">Select Street</option>';
+                    })
+                    .catch(error => {
+                        console.error('Error loading neighborhoods:', error);
+                        neighborhoodSelect.innerHTML = '<option value="">Error loading neighborhoods</option>';
                     });
             } else {
                 neighborhoodSelect.disabled = true;
@@ -170,13 +178,14 @@
 
         function loadStreets() {
             const citySelect = document.getElementById('citySelect');
+            const districtSelect = document.getElementById('districtSelect');
             const neighborhoodSelect = document.getElementById('neighborhoodSelect');
             const streetSelect = document.getElementById('streetSelect');
             
             const selectedCityId = citySelect.value;
             const selectedNeighborhood = neighborhoodSelect.value;
             
-            if (selectedNeighborhood) {
+            if (selectedCityId && selectedNeighborhood) {
                 fetch(`?handler=Streets&cityId=${selectedCityId}&neighborhood=${encodeURIComponent(selectedNeighborhood)}`)
                     .then(response => response.json())
                     .then(data => {
@@ -188,6 +197,10 @@
                             streetSelect.appendChild(option);
                         });
                         streetSelect.disabled = false;
+                    })
+                    .catch(error => {
+                        console.error('Error loading streets:', error);
+                        streetSelect.innerHTML = '<option value="">Error loading streets</option>';
                     });
             } else {
                 streetSelect.disabled = true;

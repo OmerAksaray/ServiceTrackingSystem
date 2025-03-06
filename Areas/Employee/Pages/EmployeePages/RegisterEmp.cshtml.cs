@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
-using ServiceTrackingSystem.Migrations;
 using ServiceTrackingSystem.Models;
 using System.ComponentModel.DataAnnotations;
 using System.Text;

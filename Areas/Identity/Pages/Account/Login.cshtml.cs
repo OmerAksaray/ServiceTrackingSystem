@@ -115,27 +115,38 @@ namespace ServiceTrackingSystem.Areas.Identity.Pages.Account
                 // This doesn't count login failures towards account lockout
                 // To enable password failures to trigger account lockout, set lockoutOnFailure: true
                 var result = await _signInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+                
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User logged in.");
                     
-                    // Get the user and check their UserType to redirect accordingly
+                    // Her zaman kullanıcı tipine göre yönlendirme yap, returnUrl parametresini tamamen görmezden gel
                     var user = await _userManager.FindByEmailAsync(Input.Email);
                     
                     if (user != null)
                     {
-                        // Redirect based on user type
+                        // Set a claim for the user type to ensure consistent UI
+                        var claims = await _userManager.GetClaimsAsync(user);
+                        var userTypeClaim = claims.FirstOrDefault(c => c.Type == "UserType");
+                        
+                        if (userTypeClaim == null)
+                        {
+                            await _userManager.AddClaimAsync(user, new System.Security.Claims.Claim("UserType", user.UserType));
+                        }
+                        
+                        // Kullanıcı tipine göre yönlendirme yap ve returnUrl'i her zaman görmezden gel
                         if (user.UserType == "Driver")
                         {
                             return RedirectToPage("/DriverPages/Dashboard", new { area = "Driver" });
                         }
-                        else if (user.UserType == "Employee")
+                        else if (user.UserType == "EMPLOYEE")
                         {
-                            return RedirectToPage("/EmployeePages/Addresses", new { area = "Employee" });
+                            return RedirectToPage("/EmployeePages/HomePageEmp", new { area = "Employee" });
                         }
                     }
                     
-                    return LocalRedirect(returnUrl);
+                    // Eğer bir şekilde kullanıcı bulunamazsa, ana sayfaya yönlendir
+                    return LocalRedirect("~/");
                 }
                 if (result.RequiresTwoFactor)
                 {

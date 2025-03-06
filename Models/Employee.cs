@@ -13,15 +13,12 @@ namespace ServiceTrackingSystem.Models
         public int? DriverId { get; set; }  
         public virtual Driver? Driver { get; set; }
 
-        // Navigation property for addresses
+        // Navigation property for addresses - single collection
         public virtual ICollection<EmployeeAddress> Addresses { get; set; } = new List<EmployeeAddress>();
         
         [ForeignKey("RouteAssignment")]
         public int? RouteAssignmentId { get; set; } 
 
         public virtual RouteAssignment? RouteAssignment { get; set; }
-
-        public virtual ICollection<EmployeeAddress> EmployeeAddresses { get; set; } = new List<EmployeeAddress>();
-
     }
 }

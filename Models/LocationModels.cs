@@ -8,8 +8,15 @@ namespace ServiceTrackingSystem.Models
     {
         [Key]
         public int LocationId { get; set; }
+        
         public string AddressLine { get; set; }
         public string City { get; set; }
+        public int CityId { get; set; }
+        public string CityName { get; set; }
+        public string DistrictName { get; set; }
+        public string NeighborhoodName { get; set; }
+        public string StreetName { get; set; }
+        public string? DetailedAddress { get; set; }
         public string Country { get; set; }
         
         // Navigation property - a location can be associated with multiple employee addresses
@@ -27,10 +34,9 @@ namespace ServiceTrackingSystem.Models
 
     public class District
     {
-        public int DistrictId { get; set; }
         [JsonPropertyName("ilAdi")]
         public string CityName { get; set; }
-        [JsonPropertyName("IlceAdi")]
+        [JsonPropertyName("ilceAdi")]
         public string DistrictName { get; set; }
     }
 
@@ -38,9 +44,9 @@ namespace ServiceTrackingSystem.Models
     {
         public int NeighborhoodId { get; set; }
 
-        [JsonPropertyName("IlceAdi")]
+        [JsonPropertyName("ilceAdi")]
         public string DistrictName { get; set; }
-        [JsonPropertyName("MahalleAdi")]
+        [JsonPropertyName("mahalleAdi")]
         public string NeighborhoodName { get; set; }
     }
 
@@ -48,9 +54,9 @@ namespace ServiceTrackingSystem.Models
     {
         public int StreetId { get; set; }
 
-        [JsonPropertyName("MahalleAdi")]
+        [JsonPropertyName("mahalleAdi")]
         public string NeighborhoodName { get; set; }
-        [JsonPropertyName("SokakAdi")]
+        [JsonPropertyName("sokakAdi")]
         public string StreetName { get; set; }
     }
 }

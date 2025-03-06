@@ -3,9 +3,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using ServiceTrackingSystem.Models;
+using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Net.Http;
+using System.Linq;
 using System.Text.Json;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
 {
@@ -14,11 +18,13 @@ namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
         private readonly AppDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly HttpClient client = new HttpClient();
+        private readonly ILogger<HomePageEmpModel> _logger;
 
-        public HomePageEmpModel(AppDbContext context, UserManager<ApplicationUser> userManager)
+        public HomePageEmpModel(AppDbContext context, UserManager<ApplicationUser> userManager, ILogger<HomePageEmpModel> logger)
         {
             _context = context;
             _userManager = userManager;
+            _logger = logger;
         }
 
         [BindProperty]
@@ -65,8 +71,26 @@ namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
             }
             catch (HttpRequestException e)
             {
-                Console.WriteLine($"Request error: {e.Message}");
+                _logger.LogError("Request error: {ErrorMessage}", e.Message);
                 return Page();
+            }
+        }
+
+        // Method to fetch a specific city by ilkod
+        public async Task<City> GetCityByIdAsync(int cityId)
+        {
+            try
+            {
+                HttpResponseMessage response = await client.GetAsync($"https://tradres.com.tr/api/iller?ilkod={cityId}");
+                response.EnsureSuccessStatusCode();
+
+                string responseBody = await response.Content.ReadAsStringAsync();
+                return JsonSerializer.Deserialize<City>(responseBody);
+            }
+            catch (HttpRequestException e)
+            {
+                _logger.LogError("Request error when fetching city: {ErrorMessage}", e.Message);
+                return null;
             }
         }
 
@@ -76,11 +100,13 @@ namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
             {
                 var response = await client.GetAsync($"https://tradres.com.tr/api/ilceler?ilkod={cityId}");
                 response.EnsureSuccessStatusCode();
-                var districts = await response.Content.ReadAsStringAsync();
-                return new JsonResult(JsonSerializer.Deserialize<List<District>>(districts));
+                string districtsJson = await response.Content.ReadAsStringAsync();
+                var districts = JsonSerializer.Deserialize<List<District>>(districtsJson);
+                return new JsonResult(districts);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError("Error fetching districts: {ErrorMessage}", ex.Message);
                 return new JsonResult(new List<District>());
             }
         }
@@ -92,11 +118,14 @@ namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
                 var encodedDistrict = Uri.EscapeDataString(district);
                 var response = await client.GetAsync($"https://tradres.com.tr/api/mahalleler?ilkod={cityId}&ilce={encodedDistrict}");
                 response.EnsureSuccessStatusCode();
-                var neighborhoods = await response.Content.ReadAsStringAsync();
-                return new JsonResult(JsonSerializer.Deserialize<List<Neighborhood>>(neighborhoods));
+                
+                string neighborhoodsJson = await response.Content.ReadAsStringAsync();
+                var neighborhoods = JsonSerializer.Deserialize<List<Neighborhood>>(neighborhoodsJson);
+                return new JsonResult(neighborhoods);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError("Error fetching neighborhoods: {ErrorMessage}", ex.Message);
                 return new JsonResult(new List<Neighborhood>());
             }
         }
@@ -108,11 +137,14 @@ namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
                 var encodedNeighborhood = Uri.EscapeDataString(neighborhood);
                 var response = await client.GetAsync($"https://tradres.com.tr/api/sokaklar?ilkod={cityId}&mahalle={encodedNeighborhood}");
                 response.EnsureSuccessStatusCode();
-                var streets = await response.Content.ReadAsStringAsync();
-                return new JsonResult(JsonSerializer.Deserialize<List<Street>>(streets));
+                
+                string streetsJson = await response.Content.ReadAsStringAsync();
+                var streets = JsonSerializer.Deserialize<List<Street>>(streetsJson);
+                return new JsonResult(streets);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError("Error fetching streets: {ErrorMessage}", ex.Message);
                 return new JsonResult(new List<Street>());
             }
         }
@@ -131,26 +163,44 @@ namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
                 return NotFound();
             }
 
-            // Create new address directly with user ID
-            var newAddress = new EmployeeAddress
+            // Fetch city from API to ensure we have the correct data
+            try
             {
-                EmployeeId = user.Id,
-                Location = new Location
+                int cityId = Input.Location.CityId;
+                var cityResponse = await client.GetAsync($"https://tradres.com.tr/api/iller?ilkod={cityId}");
+                cityResponse.EnsureSuccessStatusCode();
+                
+                var cityJsonContent = await cityResponse.Content.ReadAsStringAsync();
+                var city = JsonSerializer.Deserialize<City>(cityJsonContent);
+                
+                // Create new address directly with user ID
+                var newAddress = new EmployeeAddress
                 {
-                    CityId = Input.Location.CityId,
-                    CityName = Input.Location.CityName,
-                    DistrictName = Input.Location.DistrictName,
-                    NeighborhoodName = Input.Location.NeighborhoodName,
-                    StreetName = Input.Location.StreetName,
-                    DetailedAddress = Input.Address
-                },
-                IsActive = Input.IsActive
-            };
+                    EmployeeId = user.Id,
+                    Location = new Location
+                    {
+                        CityId = city.CityId,
+                        CityName = city.CityName,
+                        DistrictName = Input.Location.DistrictName,
+                        NeighborhoodName = Input.Location.NeighborhoodName,
+                        StreetName = Input.Location.StreetName,
+                        DetailedAddress = Input.Address
+                    },
+                    IsActive = Input.IsActive
+                };
 
-            _context.EmployeeAddresses.Add(newAddress);
-            await _context.SaveChangesAsync();
+                _context.EmployeeAddresses.Add(newAddress);
+                await _context.SaveChangesAsync();
 
-            return RedirectToPage();
+                return RedirectToPage();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Error creating address: {ErrorMessage}", ex.Message);
+                ModelState.AddModelError(string.Empty, $"Error creating address: {ex.Message}");
+                await OnGetAsync();
+                return Page();
+            }
         }
 
         public async Task<IActionResult> OnPostSetActiveAsync(int addressId)

@@ -8,7 +8,15 @@ var builder = WebApplication.CreateBuilder(args);
 
 // 📌 Veritabanı Bağlantısı
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
+        sqlServerOptionsAction: sqlOptions => 
+        {
+            sqlOptions.CommandTimeout(600); // Increase command timeout to 10 minutes
+            sqlOptions.EnableRetryOnFailure(
+                maxRetryCount: 5,
+                maxRetryDelay: TimeSpan.FromSeconds(30),
+                errorNumbersToAdd: null);
+        }));
 
 // 📌 Kimlik Doğrulama
 builder.Services.AddIdentity<ApplicationUser, IdentityRole<int>>() 
@@ -26,14 +34,12 @@ builder.Services.ConfigureApplicationCookie(options =>
 {
     options.LoginPath = "/Identity/Account/Login";  // Identity sayfasını kullanıyoruz
     options.AccessDeniedPath = "/Identity/Account/AccessDenied";
+    options.LogoutPath = "/Identity/Account/Logout";
     options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
-});
-
-builder.Services.ConfigureApplicationCookie(options =>
-{
     options.Cookie.HttpOnly = true;
-    options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
     options.SlidingExpiration = true;
+    // ReturnUrlParameter'i boş bırakırsak, giriş sonrasında varsayılan yönlendirmeyi dikkate almayacak
+    // böylece Login.cshtml.cs'deki yönlendirme mantığımızı çalıştıracaktır
 });
 
 builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
@@ -68,6 +74,9 @@ app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Add our custom middleware to handle user type-based layouts
+app.UseUserTypeLayout();
 
 // 📌 Varsayılan Route Tanımlama
 app.MapControllerRoute(

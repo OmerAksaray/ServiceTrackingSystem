@@ -1,26 +1,43 @@
 @{
+    // Check user type and set layout accordingly
+    if (User.Identity.IsAuthenticated)
+    {
+        // First try to get UserType from claims
+        var claimsPrincipal = User as System.Security.Claims.ClaimsPrincipal;
+        var userType = claimsPrincipal?.Claims.FirstOrDefault(c => c.Type == "UserType")?.Value;
+        
+        // If UserType not found in claims, try to get from database
+        if (string.IsNullOrEmpty(userType))
+        {
+            var userManager = Context.RequestServices
+                .GetService(typeof(Microsoft.AspNetCore.Identity.UserManager<ServiceTrackingSystem.Models.ApplicationUser>)) 
+                as Microsoft.AspNetCore.Identity.UserManager<ServiceTrackingSystem.Models.ApplicationUser>;
+            
+            var userId = claimsPrincipal?.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
+            var user = userId != null && userManager != null ? userManager.FindByIdAsync(userId).Result : null;
+            
+            if (user != null)
+            {
+                userType = user.UserType;
+            }
+        }
+
+        // Set layout based on user type
+        if (!string.IsNullOrEmpty(userType))
+        {
+            if (userType == "Employee")
+            {
+                Layout = "/Areas/Employee/Pages/Shared/_EmployeeLayout.cshtml";
+                return;
+            }
+            else if (userType == "Driver")
+            {
+                Layout = "/Areas/Driver/Pages/Shared/_DriverLayout.cshtml";
+                return;
+            }
+        }
+    }
     
-    var userType = User.Claims.FirstOrDefault(c => c.Type.Contains("role"))?.Value;
-    if (string.IsNullOrEmpty(userType))
-    {
-        Layout = "_Layout";
-        //@* Debug information *@
-        <text>@* Current UserType: @userType *@</text>
-        <text>@* Is authenticated: @User.Identity.IsAuthenticated *@</text>
-        <text>@* Available claims: @string.Join(", ", User.Claims.Select(c => $"{c.Type}: {c.Value}")) *@</text>
-    }
-    else if (userType == "EMPLOYEE")
-    {
-        Layout = "/Areas/Employee/Pages/Shared/_EmployeeLayout.cshtml";
-    }
-    else if (userType == "DRIVER")
-    {
-
-        Layout = "/Areas/Driver/Pages/Shared/_DriverLayout.cshtml";
-
-    }
-    else
-    {
-        Layout = "_Layout";
-    }
+    // Default layout if not authenticated or no specific UserType
+    Layout = "_Layout";
 }

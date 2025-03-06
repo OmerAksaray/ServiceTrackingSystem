@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -15,6 +16,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using System.Web;
 using ServiceTrackingSystem.Models;
+using Microsoft.AspNetCore.Antiforgery;
 
 namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
 {
@@ -23,12 +25,14 @@ namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly AppDbContext _context;
         private readonly IHttpClientFactory _clientFactory;
+        private readonly ILogger<AddressesModel> _logger;
 
-        public AddressesModel(UserManager<ApplicationUser> userManager, AppDbContext context, IHttpClientFactory clientFactory)
+        public AddressesModel(UserManager<ApplicationUser> userManager, AppDbContext context, IHttpClientFactory clientFactory, ILogger<AddressesModel> logger)
         {
             _userManager = userManager;
             _context = context;
             _clientFactory = clientFactory;
+            _logger = logger;
         }
 
         [BindProperty]
@@ -36,21 +40,20 @@ namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
 
         public class InputModel
         {
-            [Required(ErrorMessage = "Address is required")]
             [Display(Name = "Detailed Address")]
-            public string Address { get; set; }
+            public string? Address { get; set; }
 
             [Display(Name = "Active Address")]
             public bool IsActive { get; set; }
 
-            public Location Location { get; set; } = new Location();
+            public AddressLocation Location { get; set; } = new AddressLocation();
         }
 
-        public class Location
+        public class AddressLocation
         {
             [Required(ErrorMessage = "City selection is required")]
             [Display(Name = "City")]
-            public string CityId { get; set; } // String olarak bırakıyoruz çünkü API'den bu şekilde geliyor
+            public int CityId { get; set; } // String olarak bırakıyoruz çünkü API'den bu şekilde geliyor
 
             public string CityName { get; set; }
 
@@ -67,10 +70,13 @@ namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
             public string StreetName { get; set; }
 
             [Display(Name = "Detailed Address")]
-            public string DetailedAddress { get; set; }
+            public string? DetailedAddress { get; set; }
         }
 
         public List<CityViewModel> Cities { get; set; }
+        public List<DistrictViewModel> Districts { get; set; }
+        public List<NeighborhoodViewModel> Neighborhoods { get; set; }
+        public List<StreetViewModel> Streets { get; set; }
         public List<EmployeeAddress> EmployeeAddresses { get; set; }
         [TempData]
         public string StatusMessage { get; set; }
@@ -78,8 +84,28 @@ namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
 
         public class CityViewModel
         {
-            public string CityId { get; set; }
+            public int CityId { get; set; }
             public string CityName { get; set; }
+        }
+
+        public class DistrictViewModel
+        {
+            public string DistrictName { get; set; }
+            public int CityId { get; set; }  
+        }
+
+        public class NeighborhoodViewModel
+        {
+            public string NeighborhoodName { get; set; }
+            public int CityId { get; set; }
+            public string DistrictName { get; set; }  
+        }
+
+        public class StreetViewModel
+        {
+            public string StreetName { get; set; }
+            public int CityId { get; set; }
+            public string NeighborhoodName { get; set; }  
         }
 
         private async Task LoadAddresses(int userId)
@@ -104,34 +130,357 @@ namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
             try
             {
                 var client = _clientFactory.CreateClient();
+                client.Timeout = TimeSpan.FromSeconds(30); // Set reasonable timeout
+                
+                // Log the API request
+                _logger.LogInformation("Making request to city API: https://tradres.com.tr/api/iller");
+                
                 var response = await client.GetAsync("https://tradres.com.tr/api/iller");
+                
+                // Initialize Cities list to avoid null reference
+                Cities = new List<CityViewModel>();
 
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
-                    var cities = JsonConvert.DeserializeObject<List<dynamic>>(content);
-                    Cities = new List<CityViewModel>();
+                    _logger.LogInformation($"API Response received, length: {content.Length}");
                     
-                    foreach (var city in cities)
+                    // Parse the JSON array directly instead of using City model
+                    try 
                     {
-                        Cities.Add(new CityViewModel
+                        var jsonArray = JArray.Parse(content);
+                        _logger.LogInformation($"Parsed JSON array with {jsonArray.Count} cities");
+                        
+                        foreach (var item in jsonArray)
                         {
-                            CityId = city.plaka?.ToString() ?? city.ilKod?.ToString() ?? city.ToString(),
-                            CityName = city.sehir?.ToString() ?? city.ilAdi?.ToString() ?? city.ToString()
-                        });
+                            int cityId = item["ilId"].Value<int>();
+                            string cityName = item["ilAdi"].Value<string>();
+                            
+                            _logger.LogInformation($"Parsed city: ID={cityId}, Name={cityName}");
+                            
+                            Cities.Add(new CityViewModel
+                            {
+                                CityId = cityId,
+                                CityName = cityName
+                            });
+                        }
+                        
+                        _logger.LogInformation($"Successfully loaded {Cities.Count} cities");
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError($"Error parsing city data: {ex.Message}");
+                        StatusMessage = "Error loading city data. Please try again later.";
                     }
                 }
                 else
                 {
-                    // API error, create an empty list
-                    Cities = new List<CityViewModel>();
+                    _logger.LogError($"Error loading city information. API response code: {response.StatusCode}");
                     StatusMessage = $"Error loading city information. API response code: {response.StatusCode}";
+                    
+                    // Add some dummy data for testing if needed
+                     
                 }
             }
             catch (Exception ex)
             {
-                Cities = new List<CityViewModel>();
+                _logger.LogError(ex, "Exception when loading cities");
                 StatusMessage = $"Error loading city information: {ex.Message}";
+                
+                // Add some dummy data for testing if needed
+                 
+            }
+        }
+
+        [HttpGet]
+        [IgnoreAntiforgeryToken]
+        public async Task<JsonResult> OnGetDistrictsAsync(int cityId)
+        {
+            try
+            {
+                var client = _clientFactory.CreateClient();
+                client.Timeout = TimeSpan.FromSeconds(30); // Set reasonable timeout
+
+                // Log the API request
+                _logger.LogInformation($"Making request to district API: https://tradres.com.tr/api/ilceler?ilkod={cityId}");
+
+                var response = await client.GetAsync($"https://tradres.com.tr/api/ilceler?ilkod={cityId}");
+
+                // Initialize Districts list to avoid null reference
+                Districts = new List<DistrictViewModel>();
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+                    _logger.LogInformation($"API Response received, length: {content.Length}");
+
+                    // Parse the JSON array directly instead of using District model
+                    try
+                    {
+                        var jsonArray = JArray.Parse(content);
+                        _logger.LogInformation($"Parsed JSON array with {jsonArray.Count} districts");
+
+                        // Get city name for the reference
+                        string cityName = await GetCityNameByIdAsync(cityId);
+
+                        foreach (var item in jsonArray)
+                        {
+                            string districtName = item["ilceAdi"].Value<string>();
+                            // Use ilceAdi as value since that's what we need for the next API call
+                            Districts.Add(new DistrictViewModel
+                            {
+                                DistrictName = districtName,
+                                CityId = cityId
+                            });
+                        }
+
+                        _logger.LogInformation($"Successfully loaded {Districts.Count} districts");
+                        
+                        // Return the districts as JSON
+                        return new JsonResult(Districts);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError($"Error parsing district data: {ex.Message}");
+                        StatusMessage = "Error loading district data. Please try again later.";
+                        return new JsonResult(new { error = ex.Message });
+                    }
+                }
+                else
+                {
+                    _logger.LogError($"Error loading district information. API response code: {response.StatusCode}");
+                    StatusMessage = $"Error loading district information. API response code: {response.StatusCode}";
+
+                    // Return error as JSON
+                    return new JsonResult(new { error = $"Error: {response.StatusCode}" });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Exception when loading districts");
+                StatusMessage = $"Error loading district information: {ex.Message}";
+
+                // Return error as JSON
+                return new JsonResult(new { error = ex.Message });
+            }
+        }
+
+        [HttpGet]
+        [IgnoreAntiforgeryToken]
+        public async Task<JsonResult> OnGetNeighborhoodsAsync(string districtName, int cityId)
+        {
+            try
+            {
+                var client = _clientFactory.CreateClient();
+                client.Timeout = TimeSpan.FromSeconds(30); // Set reasonable timeout
+
+                // Log the API request
+                _logger.LogInformation($"Making request to neighborhood API: https://tradres.com.tr/api/mahalleler?ilkod={cityId}&ilce={districtName}");
+
+                // Properly encode the Turkish characters in the district name
+                var encodedDistrictName = HttpUtility.UrlEncode(districtName);
+                var response = await client.GetAsync($"https://tradres.com.tr/api/mahalleler?ilkod={cityId}&ilce={encodedDistrictName}");
+
+                // Initialize Neighborhoods list to avoid null reference
+                Neighborhoods = new List<NeighborhoodViewModel>();
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+                    _logger.LogInformation($"API Response received, length: {content.Length}");
+
+                    // Parse the JSON array directly
+                    try
+                    {
+                        var jsonArray = JArray.Parse(content);
+                        _logger.LogInformation($"Parsed JSON array with {jsonArray.Count} neighborhoods");
+
+                        foreach (var item in jsonArray)
+                        {
+                            string neighborhoodName = item["mahalleAdi"].Value<string>();
+
+                            _logger.LogInformation($"Parsed neighborhood: Name={neighborhoodName}");
+
+                            Neighborhoods.Add(new NeighborhoodViewModel
+                            {
+                                NeighborhoodName = neighborhoodName,
+                                CityId = cityId,
+                                DistrictName = districtName
+                            });
+                        }
+
+                        _logger.LogInformation($"Successfully loaded {Neighborhoods.Count} neighborhoods");
+                        
+                        // Return the neighborhoods as JSON
+                        return new JsonResult(Neighborhoods);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError($"Error parsing neighborhood data: {ex.Message}");
+                        StatusMessage = "Error loading neighborhood data. Please try again later.";
+                        return new JsonResult(new { error = ex.Message });
+                    }
+                }
+                else
+                {
+                    _logger.LogError($"Error loading neighborhood information. API response code: {response.StatusCode}");
+                    StatusMessage = $"Error loading neighborhood information. API response code: {response.StatusCode}";
+
+                    // Return error as JSON
+                    return new JsonResult(new { error = $"Error: {response.StatusCode}" });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Exception when loading neighborhoods");
+                StatusMessage = $"Error loading neighborhood information: {ex.Message}";
+
+                // Return error as JSON
+                return new JsonResult(new { error = ex.Message });
+            }
+        }
+
+        [HttpGet]
+        [IgnoreAntiforgeryToken]
+        public async Task<JsonResult> OnGetStreetsAsync(string neighborhoodName, int cityId)
+        {
+            try
+            {
+                // Clean up neighborhood name by removing 'MAHALLESİ' if present
+                string cleanNeighborhoodName = neighborhoodName;
+                if (neighborhoodName.Contains("MAHALLESİ", StringComparison.OrdinalIgnoreCase))
+                {
+                    cleanNeighborhoodName = neighborhoodName.Replace(" MAHALLESİ", "", StringComparison.OrdinalIgnoreCase);
+                    _logger.LogInformation($"Cleaned neighborhood name: {cleanNeighborhoodName} (original: {neighborhoodName})");
+                }
+                
+                var client = _clientFactory.CreateClient();
+                client.Timeout = TimeSpan.FromSeconds(30); // Set reasonable timeout
+
+                // Log the API request with cleaned neighborhood name
+                _logger.LogInformation($"Making request to street API: https://tradres.com.tr/api/sokaklar?ilkod={cityId}&mahalle={cleanNeighborhoodName}");
+
+                // Properly encode the Turkish characters in the cleaned neighborhood name
+                var encodedNeighborhoodName = HttpUtility.UrlEncode(cleanNeighborhoodName);
+                var response = await client.GetAsync($"https://tradres.com.tr/api/sokaklar?ilkod={cityId}&mahalle={encodedNeighborhoodName}");
+
+                // Initialize Streets list to avoid null reference
+                Streets = new List<StreetViewModel>();
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+                    _logger.LogInformation($"API Response received, length: {content.Length}");
+
+                    // Parse the JSON array directly
+                    try
+                    {
+                        var jsonArray = JArray.Parse(content);
+                        _logger.LogInformation($"Parsed JSON array with {jsonArray.Count} streets");
+
+                        foreach (var item in jsonArray)
+                        {
+                            // According to the example, use the 'sokakAdi' field from the API response
+                            string streetName = item["sokakAdi"].Value<string>();
+
+                            _logger.LogInformation($"Parsed street: Name={streetName}");
+
+                            Streets.Add(new StreetViewModel
+                            {
+                                StreetName = streetName,
+                                CityId = cityId,
+                                NeighborhoodName = neighborhoodName // Keep original neighborhood name for UI
+                            });
+                        }
+
+                        _logger.LogInformation($"Successfully loaded {Streets.Count} streets");
+                        
+                        // Return the streets as JSON
+                        return new JsonResult(Streets);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError($"Error parsing street data: {ex.Message}");
+                        StatusMessage = "Error loading street data. Please try again later.";
+                        return new JsonResult(new { error = ex.Message });
+                    }
+                }
+                else
+                {
+                    _logger.LogError($"Error loading street information. API response code: {response.StatusCode}");
+                    StatusMessage = $"Error loading street information. API response code: {response.StatusCode}";
+
+                    // Return error as JSON
+                    return new JsonResult(new { error = $"Error: {response.StatusCode}" });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Exception when loading streets");
+                StatusMessage = $"Error loading street information: {ex.Message}";
+
+                // Return error as JSON
+                return new JsonResult(new { error = ex.Message });
+            }
+        }
+
+
+        private async Task<City> GetCityByIdAsync(int cityId)
+        {
+            try
+            {
+                var client = _clientFactory.CreateClient();
+                var response = await client.GetAsync($"https://tradres.com.tr/api/iller?ilkod={cityId}");
+                
+                response.EnsureSuccessStatusCode();
+                var content = await response.Content.ReadAsStringAsync();
+                return JsonConvert.DeserializeObject<City>(content);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error retrieving city with ID {cityId}");
+                return null;
+            }
+        }
+
+        private async Task<string> GetCityNameByIdAsync(int cityId)
+        {
+            try
+            {
+                // First try to find the city name in the already loaded cities list
+                if (Cities != null && Cities.Any())
+                {
+                    var city = Cities.FirstOrDefault(c => c.CityId == cityId);
+                    if (city != null)
+                    {
+                        return city.CityName;
+                    }
+                }
+
+                // If not found, make an API call
+                var client = _clientFactory.CreateClient();
+                var response = await client.GetAsync("https://tradres.com.tr/api/iller");
+                
+                response.EnsureSuccessStatusCode();
+
+                var content = await response.Content.ReadAsStringAsync();
+                var cityArray = JArray.Parse(content);
+                
+                foreach (var item in cityArray)
+                {
+                    int id = item["ilId"].Value<int>();
+                    if (id == cityId)
+                    {
+                        return item["ilAdi"].Value<string>();
+                    }
+                }
+                
+                return string.Empty;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error retrieving city name with ID {cityId}");
+                return string.Empty;
             }
         }
 
@@ -151,14 +500,14 @@ namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
             {
                 EditingAddressId = addressId;
                 
-                var addressToEdit = EmployeeAddresses.FirstOrDefault(a => a.Id == addressId.Value);
+                var addressToEdit = EmployeeAddresses.FirstOrDefault(a => a.EmployeeAddressId == addressId.Value);
                 if (addressToEdit != null)
                 {
                     Input = new InputModel
                     {
                         Address = addressToEdit.Location.DetailedAddress,
                         IsActive = addressToEdit.IsActive,
-                        Location = new Location
+                        Location = new AddressLocation
                         {
                             CityId = addressToEdit.Location.CityId,
                             CityName = addressToEdit.Location.CityName,
@@ -176,58 +525,64 @@ namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
 
         public async Task<IActionResult> OnPostSaveAddressAsync(int? addressId)
         {
+            if (!ModelState.IsValid)
+            {
+                await LoadCities();
+                EditingAddressId = addressId;
+                return Page();
+            }
+
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
-                return RedirectToPage("/Account/Login", new { area = "Identity" });
-            }
-
-            // Debug: Log all validation errors
-            var errorList = new List<string>();
-            foreach (var state in ModelState)
-            {
-                if (state.Value.Errors.Any())
-                {
-                    errorList.Add($"{state.Key}: {string.Join(", ", state.Value.Errors.Select(e => e.ErrorMessage))}");
-                }
-            }
-            
-            if (errorList.Any())
-            {
-                StatusMessage = $"Validation errors: {string.Join(" | ", errorList)}";
-            }
-            
-            // DetailedAddress validasyonunu manuel olarak kaldıralım
-            if (ModelState.ContainsKey("Input.Location.DetailedAddress"))
-            {
-                ModelState.Remove("Input.Location.DetailedAddress");
-            }
-
-            if (!ModelState.IsValid)
-            {
-                EditingAddressId = addressId;
-                // Ensure Cities are always loaded even on validation failures
-                await LoadCities();
-                await LoadAddresses(user.Id);
-                return Page();
+                return NotFound();
             }
 
             try
             {
-                // Şimdi burada Input.Address değerini Input.Location.DetailedAddress'e atalım
-                Input.Location.DetailedAddress = Input.Address;
+                // Fetch city data from API to ensure we have correct information
+                int cityId = Input.Location.CityId;
+                var client = _clientFactory.CreateClient();
+                client.Timeout = TimeSpan.FromSeconds(30); // Set reasonable timeout
+                
+                _logger.LogInformation($"Fetching city data for ID: {cityId}");
+                var cityResponse = await client.GetAsync($"https://tradres.com.tr/api/iller");
+                
+                if (!cityResponse.IsSuccessStatusCode)
+                {
+                    throw new Exception($"Failed to retrieve city data. Status code: {cityResponse.StatusCode}");
+                }
+                
+                var cityContent = await cityResponse.Content.ReadAsStringAsync();
+                var cityArray = JArray.Parse(cityContent);
+                
+                string cityName = string.Empty;
+                foreach (var item in cityArray)
+                {
+                    int id = item["ilId"].Value<int>();
+                    if (id == cityId)
+                    {
+                        cityName = item["ilAdi"].Value<string>();
+                        break;
+                    }
+                }
+                
+                if (string.IsNullOrEmpty(cityName))
+                {
+                    throw new Exception($"City with ID {cityId} not found in API response");
+                }
 
-                // Check if we're updating or adding a new address
                 if (addressId.HasValue)
                 {
-                    // Find and update existing address
+                    // Update existing address
+                    _logger.LogInformation($"Updating existing address with ID: {addressId}");
                     var addressToUpdate = await _context.EmployeeAddresses
                         .Include(ea => ea.Location)
-                        .FirstOrDefaultAsync(ea => ea.Id == addressId.Value && ea.EmployeeId == user.Id);
+                        .FirstOrDefaultAsync(ea => ea.EmployeeAddressId == addressId.Value && ea.EmployeeId == user.Id);
 
                     if (addressToUpdate == null)
                     {
-                        StatusMessage = "Error! Address to update not found!";
+                        StatusMessage = "Error: Address not found or you do not have permission to edit it.";
                         await LoadCities();
                         await LoadAddresses(user.Id);
                         EditingAddressId = addressId;
@@ -235,23 +590,27 @@ namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
                     }
 
                     // Update location information
-                    addressToUpdate.Location.CityId = Input.Location.CityId;
-                    addressToUpdate.Location.CityName = Input.Location.CityName;
+                    addressToUpdate.Location.CityId = cityId;
+                    addressToUpdate.Location.CityName = cityName;
                     addressToUpdate.Location.DistrictName = Input.Location.DistrictName;
                     addressToUpdate.Location.NeighborhoodName = Input.Location.NeighborhoodName;
                     addressToUpdate.Location.StreetName = Input.Location.StreetName;
-                    addressToUpdate.Location.DetailedAddress = Input.Location.DetailedAddress;
+                    addressToUpdate.Location.DetailedAddress = Input.Address; // This is now nullable
+                    addressToUpdate.Location.AddressLine = Input.Address ?? string.Empty; // Provide empty string if Address is null
+                    addressToUpdate.Location.UpdatedDate = DateTime.UtcNow;
 
                     // If marked as active, deactivate other addresses
                     if (Input.IsActive && !addressToUpdate.IsActive)
                     {
+                        _logger.LogInformation("Deactivating other addresses since this one is being set as active");
                         var activeAddresses = await _context.EmployeeAddresses
-                            .Where(ea => ea.EmployeeId == user.Id && ea.IsActive && ea.Id != addressId.Value)
+                            .Where(ea => ea.EmployeeId == user.Id && ea.IsActive && ea.EmployeeAddressId != addressId.Value)
                             .ToListAsync();
 
                         foreach (var activeAddress in activeAddresses)
                         {
                             activeAddress.IsActive = false;
+                            activeAddress.UpdatedDate = DateTime.UtcNow;
                         }
                     }
 
@@ -264,44 +623,80 @@ namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
                 else
                 {
                     // Create a new Location record
-                    var location = new Location
+                    _logger.LogInformation("Creating new address");
+                    var location = new Models.Location
                     {
-                        AddressLine = Input.Address,
-                        City = Input.Location.CityName,
-                        Country = "Turkey"
+                        AddressLine = Input.Address ?? string.Empty, // Provide empty string if Address is null
+                        DetailedAddress = Input.Address, // This can be null
+                        CityId = cityId,
+                        CityName = cityName,
+                        DistrictName = Input.Location.DistrictName,
+                        NeighborhoodName = Input.Location.NeighborhoodName,
+                        StreetName = Input.Location.StreetName,
+                        City = cityName,
+                        Country = "Turkey",
+                        CreatedDate = DateTime.UtcNow,
+                        UpdatedDate = DateTime.UtcNow
                     };
                     _context.Locations.Add(location);
+                    
+                    // We need to save changes here to get the LocationId for the new record
                     await _context.SaveChangesAsync();
+                    _logger.LogInformation($"Created new location with ID: {location.LocationId}");
 
-                    // Obtain current employee id (this should come from the logged in user context)
-                    int currentEmployeeId = user.Id; // Replace with actual logic
+                    // If it's set as active, deactivate all other addresses
+                    if (Input.IsActive)
+                    {
+                        _logger.LogInformation("Deactivating other addresses since new address is active");
+                        var activeAddresses = await _context.EmployeeAddresses
+                            .Where(ea => ea.EmployeeId == user.Id && ea.IsActive)
+                            .ToListAsync();
+
+                        foreach (var activeAddress in activeAddresses)
+                        {
+                            activeAddress.IsActive = false;
+                            activeAddress.UpdatedDate = DateTime.UtcNow;
+                        }
+                        
+                        // Save the changes to existing addresses
+                        if (activeAddresses.Any())
+                        {
+                            await _context.SaveChangesAsync();
+                        }
+                    }
 
                     // Create the EmployeeAddress record linking the employee and the new location
                     var employeeAddress = new EmployeeAddress
                     {
-                        EmployeeId = currentEmployeeId,
-                        LocationId = location.LocationId
+                        EmployeeId = user.Id,
+                        LocationId = location.LocationId,
+                        IsActive = Input.IsActive,
+                        CreatedDate = DateTime.UtcNow,
+                        UpdatedDate = DateTime.UtcNow
                     };
                     _context.EmployeeAddresses.Add(employeeAddress);
                     await _context.SaveChangesAsync();
+                    _logger.LogInformation($"Created new employee address with ID: {employeeAddress.EmployeeAddressId}");
 
                     StatusMessage = "New address successfully added.";
                 }
 
-                // Redirect to address management page after successful save
-                return RedirectToPage("./AddressManager");
+                // Redirect to addresses page after successful save
+                return RedirectToPage();
             }
             catch (Exception ex)
             {
-                // Daha detaylı hata mesajını gösterebilmek için exception yakalama kısmını düzenleyelim
+                // Capture more detailed error information
+                _logger.LogError(ex, "Error saving address");
                 var errorMessage = ex.Message;
                 var currentEx = ex;
                 
-                // Tüm iç hataları da ekleyelim
+                // Include all inner exceptions in the error message
                 while (currentEx.InnerException != null)
                 {
                     currentEx = currentEx.InnerException;
                     errorMessage += $" | Inner: {currentEx.Message}";
+                    _logger.LogError(currentEx, "Inner exception");
                 }
                 
                 StatusMessage = $"Error saving address: {errorMessage}";
@@ -325,32 +720,60 @@ namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
 
             try
             {
+                _logger.LogInformation($"Attempting to delete address with ID: {addressId}");
                 var address = await _context.EmployeeAddresses
                     .Include(a => a.Location)
-                    .FirstOrDefaultAsync(a => a.Id == addressId && a.EmployeeId == user.Id);
+                    .FirstOrDefaultAsync(a => a.EmployeeAddressId == addressId && a.EmployeeId == user.Id);
 
                 if (address != null)
                 {
-                    _context.Locations.Remove(address.Location);
+                    _logger.LogInformation($"Found address to delete. Location ID: {address.LocationId}");
+                    
+                    // Check if this is the active address
+                    bool wasActive = address.IsActive;
+                    
+                    // Remove the employee address and its location
                     _context.EmployeeAddresses.Remove(address);
+                    _context.Locations.Remove(address.Location);
 
                     await _context.SaveChangesAsync();
+                    
+                    // If the deleted address was active, make another address active
+                    if (wasActive)
+                    {
+                        _logger.LogInformation("Deleted address was active. Setting another address as active if available.");
+                        var newActiveAddress = await _context.EmployeeAddresses
+                            .Where(a => a.EmployeeId == user.Id)
+                            .OrderByDescending(a => a.UpdatedDate)
+                            .FirstOrDefaultAsync();
+                        
+                        if (newActiveAddress != null)
+                        {
+                            newActiveAddress.IsActive = true;
+                            newActiveAddress.UpdatedDate = DateTime.UtcNow;
+                            await _context.SaveChangesAsync();
+                            _logger.LogInformation($"Set address ID {newActiveAddress.EmployeeAddressId} as the new active address.");
+                        }
+                    }
+                    
                     StatusMessage = "Address successfully deleted.";
                 }
                 else
                 {
-                    StatusMessage = "Error! Address to delete not found!";
+                    _logger.LogWarning($"Address with ID {addressId} not found or does not belong to the current user.");
+                    StatusMessage = "Error! Address to delete not found or you don't have permission to delete it.";
                 }
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, $"Error deleting address ID {addressId}");
                 StatusMessage = $"Error deleting address: {ex.Message}";
             }
             
             // Always load data before returning to page
             await LoadCities();
-            await LoadAddresses(user?.Id ?? 0);
-            return Page();
+            await LoadAddresses(user.Id);
+            return RedirectToPage();
         }
 
         public async Task<IActionResult> OnPostSetActiveAddressAsync(int addressId)
@@ -371,11 +794,12 @@ namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
                 foreach (var address in activeAddresses)
                 {
                     address.IsActive = false;
+                    address.UpdatedDate = DateTime.UtcNow;
                 }
 
                 // Set the selected address as active
                 var addressToActivate = await _context.EmployeeAddresses
-                    .FirstOrDefaultAsync(a => a.Id == addressId && a.EmployeeId == user.Id);
+                    .FirstOrDefaultAsync(a => a.EmployeeAddressId == addressId && a.EmployeeId == user.Id);
 
                 if (addressToActivate != null)
                 {
@@ -400,370 +824,9 @@ namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
             return RedirectToPage();
         }
 
-        public async Task<IActionResult> OnPostEditAddressAsync(int addressId)
-        {
-            // Redirect to edit page with addressId
-            return RedirectToPage(new { addressId });
-        }
+      
 
-        public async Task<JsonResult> OnGetDistrictsAsync(string cityId)
-        {
-            try
-            {
-                Console.WriteLine($"Received cityId parameter: {cityId}");
-                
-                // Extract city code (may be JSON or direct code)
-                string ilKod = cityId;
-                try {
-                    // Try JSON parsing
-                    dynamic cityObject = JsonConvert.DeserializeObject<dynamic>(cityId);
-                    ilKod = cityObject.ilId?.ToString() ?? cityObject.plaka?.ToString() ?? cityId;
-                    Console.WriteLine($"City code extracted from JSON: {ilKod}");
-                }
-                catch (Exception ex) {
-                    // Assume direct city code
-                    Console.WriteLine($"City code parsing error (not a problem): {ex.Message}");
-                }
-                
-                var client = _clientFactory.CreateClient();
-                // Districts API expects ilKod parameter
-                var url = $"https://tradres.com.tr/api/ilceler?ilkod={ilKod}";
-                Console.WriteLine($"API call: {url}");
-                
-                var response = await client.GetAsync(url);
+      
 
-                if (response.IsSuccessStatusCode)
-                {
-                    var content = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine($"API response: {content}");
-                    
-                    // Inspect JSON structure for received data
-                    var districts = JsonConvert.DeserializeObject<dynamic>(content);
-                    
-                    // Log JSON structure in detail
-                    if (districts != null)
-                    {
-                        Console.WriteLine($"Deserialized data type: {districts.GetType().Name}");
-                        Console.WriteLine($"Number of data: {districts.Count}");
-                        
-                        // Inspect first item (if exists)
-                        if (districts.Count > 0)
-                        {
-                            var firstItem = districts[0];
-                            Console.WriteLine($"First item: {JsonConvert.SerializeObject(firstItem)}");
-                            Console.WriteLine($"Existing properties:");
-                            // Fix JObject conversion error
-                            try {
-                                foreach (JProperty prop in ((JObject)firstItem).Properties())
-                                {
-                                    Console.WriteLine($"  - {prop.Name}: {prop.Value}");
-                                }
-                            } catch (Exception ex) {
-                                Console.WriteLine($"Properties reading error: {ex.Message}");
-                            }
-                        }
-                        
-                        // Prepare formatted data for frontend
-                        var formattedDistricts = new List<object>();
-                        foreach (var district in districts)
-                        {
-                            // Add district names to formatted data in frontend format
-                            // Check all fields even if district name is missing
-                            string ilceAdi = null;
-                            try
-                            {
-                                ilceAdi = district.ilceAdi?.ToString() ?? 
-                                        district.ad?.ToString() ?? 
-                                        district.adi?.ToString() ??
-                                        district.name?.ToString() ??
-                                        district.ToString();
-                            }
-                            catch
-                            {
-                                // If this field is missing, log all fields
-                                try {
-                                    Console.WriteLine($"All fields: {JsonConvert.SerializeObject(district)}");
-                                } catch {}
-                            }
-                            
-                            formattedDistricts.Add(new { ilceAdi = ilceAdi });
-                        }
-                        
-                        Console.WriteLine($"Data to be sent to frontend: {JsonConvert.SerializeObject(formattedDistricts)}");
-                        return new JsonResult(formattedDistricts);
-                    }
-                    
-                    return new JsonResult(districts);
-                }
-                else
-                {
-                    Console.WriteLine($"API error: {response.StatusCode}");
-                    return new JsonResult(new { error = $"API response code: {response.StatusCode}" });
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"General error: {ex.Message}");
-                return new JsonResult(new { error = ex.Message });
-            }
-        }
-
-        public async Task<JsonResult> OnGetNeighborhoodsAsync(string cityId, string district)
-        {
-            try
-            {
-                Console.WriteLine($"Received parameters: cityId={cityId}, district={district}");
-                
-                // Extract city code (may be JSON or direct code)
-                string ilKod = cityId;
-                try {
-                    // Try JSON parsing
-                    dynamic cityObject = JsonConvert.DeserializeObject<dynamic>(cityId);
-                    ilKod = cityObject.ilId?.ToString() ?? cityObject.plaka?.ToString() ?? cityId;
-                    Console.WriteLine($"City code extracted from JSON: {ilKod}");
-                }
-                catch (Exception ex) {
-                    // Assume direct city code
-                    Console.WriteLine($"City code parsing error (not a problem): {ex.Message}");
-                }
-                
-                // Convert district name to URL encoded format
-                string encodedDistrict = Uri.EscapeDataString(district);
-                Console.WriteLine($"Encoded district name: {encodedDistrict}");
-                
-                var client = _clientFactory.CreateClient();
-                // Neighborhoods API expects ilKod and ilçe adı parameters
-                // In this format: https://tradres.com.tr/api/mahalleler?ilkod=16&ilce=ALTINŞEHİR
-                var url = $"https://tradres.com.tr/api/mahalleler?ilkod={ilKod}&ilce={encodedDistrict}";
-                Console.WriteLine($"API call: {url}");
-                
-                var response = await client.GetAsync(url);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    var content = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine($"API response: {content}");
-                    
-                    // Inspect JSON structure for received data
-                    var neighborhoods = JsonConvert.DeserializeObject<dynamic>(content);
-                    
-                    // Log JSON structure in detail
-                    if (neighborhoods != null)
-                    {
-                        Console.WriteLine($"Deserialized data type: {neighborhoods.GetType().Name}");
-                        Console.WriteLine($"Number of data: {neighborhoods.Count}");
-                        
-                        // Inspect first item (if exists)
-                        if (neighborhoods.Count > 0)
-                        {
-                            var firstItem = neighborhoods[0];
-                            Console.WriteLine($"First item: {JsonConvert.SerializeObject(firstItem)}");
-                            Console.WriteLine($"Existing properties:");
-                            // Fix JObject conversion error
-                            try {
-                                foreach (JProperty prop in ((JObject)firstItem).Properties())
-                                {
-                                    Console.WriteLine($"  - {prop.Name}: {prop.Value}");
-                                }
-                            } catch (Exception ex) {
-                                Console.WriteLine($"Properties reading error: {ex.Message}");
-                            }
-                        }
-                        
-                        // Prepare formatted data for frontend
-                        var formattedNeighborhoods = new List<object>();
-                        foreach (var neighborhood in neighborhoods)
-                        {
-                            // Add neighborhood names to formatted data in frontend format
-                            string mahalleAdi = null;
-                            try
-                            {
-                                mahalleAdi = neighborhood.mahalleAdi?.ToString() ?? 
-                                        neighborhood.ad?.ToString() ?? 
-                                        neighborhood.adi?.ToString() ??
-                                        neighborhood.name?.ToString() ??
-                                        neighborhood.ToString();
-                            }
-                            catch
-                            {
-                                // If this field is missing, log all fields
-                                try {
-                                    Console.WriteLine($"All fields: {JsonConvert.SerializeObject(neighborhood)}");
-                                } catch {}
-                            }
-                            
-                            formattedNeighborhoods.Add(new { mahalleAdi = mahalleAdi });
-                        }
-                        
-                        Console.WriteLine($"Data to be sent to frontend: {JsonConvert.SerializeObject(formattedNeighborhoods)}");
-                        return new JsonResult(formattedNeighborhoods);
-                    }
-                    
-                    return new JsonResult(neighborhoods);
-                }
-                else
-                {
-                    Console.WriteLine($"API error: {response.StatusCode}");
-                    return new JsonResult(new { error = $"API response code: {response.StatusCode}" });
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"General error: {ex.Message}");
-                return new JsonResult(new { error = ex.Message });
-            }
-        }
-
-        public async Task<JsonResult> OnGetStreetsAsync(string cityId, string neighborhood)
-        {
-            try
-            {
-                Console.WriteLine($"Received parameters: cityId={cityId}, neighborhood={neighborhood}");
-                // Extract city code (may be JSON or direct code)
-                string ilKod = cityId;
-                try {
-                    // Try JSON parsing
-                    dynamic cityObject = JsonConvert.DeserializeObject<dynamic>(cityId);
-                    ilKod = cityObject.ilId?.ToString() ?? cityObject.plaka?.ToString() ?? cityId;
-                    Console.WriteLine($"City code extracted from JSON: {ilKod}");
-                }
-                catch (Exception ex) {
-                    // Assume direct city code
-                    Console.WriteLine($"City code parsing error (not a problem): {ex.Message}");
-                }
-                
-                // Convert neighborhood name to URL encoded format
-                // Neighborhood name format may need to be corrected
-                string processedNeighborhood = neighborhood;
-                
-                // Try different neighborhood name formats that the API might accept
-                // Remove suffixes like 'MAHALLESİ' or 'MAHALLESI'
-                if (processedNeighborhood.EndsWith(" MAHALLESİ", StringComparison.OrdinalIgnoreCase)) {
-                    processedNeighborhood = processedNeighborhood.Substring(0, processedNeighborhood.Length - " MAHALLESİ".Length).Trim();
-                    Console.WriteLine($"Removed 'MAHALLESİ', new value: {processedNeighborhood}");
-                } else if (processedNeighborhood.EndsWith(" MAHALLESI", StringComparison.OrdinalIgnoreCase)) {
-                    processedNeighborhood = processedNeighborhood.Substring(0, processedNeighborhood.Length - " MAHALLESI".Length).Trim();
-                    Console.WriteLine($"Removed 'MAHALLESI', new value: {processedNeighborhood}");
-                } else if (processedNeighborhood.EndsWith(" MAH", StringComparison.OrdinalIgnoreCase)) {
-                    processedNeighborhood = processedNeighborhood.Substring(0, processedNeighborhood.Length - " MAH".Length).Trim();
-                    Console.WriteLine($"Removed 'MAH', new value: {processedNeighborhood}");
-                } else if (processedNeighborhood.EndsWith(" M", StringComparison.OrdinalIgnoreCase)) {
-                    processedNeighborhood = processedNeighborhood.Substring(0, processedNeighborhood.Length - " M".Length).Trim();
-                    Console.WriteLine($"Removed 'M', new value: {processedNeighborhood}");
-                }
-                
-                // Convert to uppercase (for APIs that expect uppercase)
-                string upperNeighborhood = processedNeighborhood.ToUpper();
-                
-                // URL encode while preserving Turkish characters
-                string encodedNeighborhood = Uri.EscapeDataString(processedNeighborhood);
-                string encodedUpperNeighborhood = Uri.EscapeDataString(upperNeighborhood);
-                Console.WriteLine($"Processed neighborhood name: {processedNeighborhood}");
-                Console.WriteLine($"Uppercase neighborhood name: {upperNeighborhood}");
-                Console.WriteLine($"Encoded neighborhood name: {encodedNeighborhood}");
-                Console.WriteLine($"Encoded uppercase neighborhood name: {encodedUpperNeighborhood}");
-                
-                // Try three different URL formats
-                string[] urlFormats = new string[] {
-                    $"https://tradres.com.tr/api/sokaklar?ilkod={ilKod}&mahalle={encodedNeighborhood}",
-                    $"https://tradres.com.tr/api/sokaklar?ilkod={ilKod}&mahalle={encodedUpperNeighborhood}",
-                    $"https://tradres.com.tr/api/sokaklar?ilkod={ilKod}&mahalle={Uri.EscapeDataString(neighborhood)}"
-                };
-
-
-                var client = _clientFactory.CreateClient();
-                
-                // Try each format
-                foreach (var url in urlFormats)
-                {
-                    Console.WriteLine($"Trying: {url}");
-                    var response = await client.GetAsync(url);
-                    Console.WriteLine($"Response status: {response.StatusCode}");
-                    
-                    if (response.IsSuccessStatusCode)
-                    {
-                        var content = await response.Content.ReadAsStringAsync();
-                        Console.WriteLine($"Successful API response: {content.Substring(0, Math.Min(content.Length, 500))}...");
-                        
-                        // Inspect JSON structure for received data
-                        var streets = JsonConvert.DeserializeObject<dynamic>(content);
-                        
-                        // Log JSON structure in detail
-                        if (streets != null)
-                        {
-                            Console.WriteLine($"Deserialized data type: {streets.GetType().Name}");
-                            Console.WriteLine($"Number of data: {streets.Count}");
-                            
-                            // Inspect first item (if exists)
-                            if (streets.Count > 0)
-                            {
-                                var firstItem = streets[0];
-                                Console.WriteLine($"First item: {JsonConvert.SerializeObject(firstItem)}");
-                                Console.WriteLine($"Existing properties:");
-                                // Fix JObject conversion error
-                                try {
-                                    foreach (JProperty prop in ((JObject)firstItem).Properties())
-                                    {
-                                        Console.WriteLine($"  - {prop.Name}: {prop.Value}");
-                                    }
-                                } catch (Exception ex) {
-                                    Console.WriteLine($"Properties reading error: {ex.Message}");
-                                }
-                            }
-                            
-                            // Prepare formatted data for frontend
-                            var formattedStreets = new List<object>();
-                            foreach (var street in streets)
-                            {
-                                // Add street names to formatted data in frontend format
-                                string sokakAdi = null;
-                                try
-                                {
-                                    sokakAdi = street.sokakAdi?.ToString();
-                                    Console.WriteLine($"Found street name: {sokakAdi}");
-                                }
-                                catch (Exception ex)
-                                {
-                                    // If this field is missing, log all fields and try alternative fields
-                                    Console.WriteLine($"sokakAdi field not found: {ex.Message}");
-                                    try {
-                                        Console.WriteLine($"All fields: {JsonConvert.SerializeObject(street)}");
-                                        // Try alternative fields
-                                        sokakAdi = street.ad?.ToString() ?? 
-                                                street.adi?.ToString() ??
-                                                street.name?.ToString() ??
-                                                street.ToString();
-                                    } catch (Exception propEx) {
-                                        Console.WriteLine($"All fields reading error: {propEx.Message}");
-                                    }
-                                }
-                                
-                                // Log warning if sokakAdi is null
-                                if (string.IsNullOrEmpty(sokakAdi)) {
-                                    Console.WriteLine("WARNING: sokakAdi value not found!");
-                                }
-                                
-                                formattedStreets.Add(new { sokakAdi = sokakAdi });
-                            }
-                            
-                            Console.WriteLine($"Data to be sent to frontend: {JsonConvert.SerializeObject(formattedStreets)}");
-                            return new JsonResult(formattedStreets);
-                        }
-                        
-                        return new JsonResult(streets);
-                    }
-                    // If this format fails, try the next one
-                }
-
-                // If all formats fail
-                Console.WriteLine("All API formats failed.");
-                return new JsonResult(new { error = "API response code: BadRequest - No format succeeded" });
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"General error: {ex.Message}");
-                return new JsonResult(new { error = ex.Message });
-            }
-        }
     }
 }
