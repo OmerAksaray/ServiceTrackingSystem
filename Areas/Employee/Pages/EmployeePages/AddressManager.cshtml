@@ -6,97 +6,111 @@
 }
 
 <div class="container mt-4">
-    <div class="card">
+    <div class="card shadow">
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-            <h4 class="mb-0">Address Management</h4>
-            <a asp-page="./Addresses" class="btn btn-light"><i class="fas fa-plus"></i> Add New Address</a>
+            <h4 class="mb-0"><i class="fas fa-map-marker-alt me-2"></i>Address Management</h4>
+            <a asp-page="./Addresses" class="btn btn-light"><i class="fas fa-plus me-1"></i> Add New Address</a>
         </div>
+        
+        @if (!string.IsNullOrEmpty(Model.StatusMessage))
+        {
+            <div class="alert @(Model.StatusMessage.StartsWith("Error") ? "alert-danger" : "alert-success") alert-dismissible fade show mx-3 mt-3" role="alert">
+                @Model.StatusMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        
         <div class="card-body">
-            @if (!string.IsNullOrEmpty(Model.StatusMessage))
-            {
-                <div class="alert @(Model.StatusMessage.StartsWith("Error") ? "alert-danger" : "alert-success") alert-dismissible fade show" role="alert">
-                    @Model.StatusMessage
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            }
-
             @if (Model.EmployeeAddresses == null || !Model.EmployeeAddresses.Any())
             {
                 <div class="alert alert-info">
-                    You don't have any saved addresses yet. Use the "Add New Address" button in the top right to add an address.
+                    <i class="fas fa-info-circle me-2"></i>You don't have any saved addresses yet. Use the "Add New Address" button to add an address.
                 </div>
             }
             else
             {
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover">
-                        <thead class="table-light">
-                            <tr>
-                                <th scope="col">Active</th>
-                                <th scope="col">Address Details</th>
-                                <th scope="col">City/District</th>
-                                <th scope="col">Neighborhood/Street</th>
-                                <th scope="col">Date Added</th>
-                                <th scope="col" class="text-center">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var address in Model.EmployeeAddresses)
-                            {
+                <form method="post" id="addressForm">
+                    <div class="table-responsive">
+                        <table class="table table-hover address-table">
+                            <thead class="table-light">
                                 <tr>
-                                    <td>
-                                        <form method="post" asp-page-handler="SetActive" asp-route-addressId="@address.Id">
-                                            <div class="form-check">
-                                                <input class="form-check-input address-active-checkbox" 
-                                                       type="radio" 
-                                                       name="activeAddress" 
-                                                       value="@address.Id" 
-                                                       @(address.IsActive ? "checked" : "") 
-                                                       onchange="this.form.submit();" />
-                                            </div>
-                                        </form>
-                                    </td>
-                                    <td>
-                                        @if (address.Location != null)
-                                        {
-                                            @address.Location.DetailedAddress
-                                        }
-                                    </td>
-                                    <td>
-                                        @if (address.Location != null)
-                                        {
-                                            @address.Location.CityName
-                                            @if (!string.IsNullOrEmpty(address.Location.DistrictName))
-                                            {
-                                                <span>/@address.Location.DistrictName</span>
-                                            }
-                                        }
-                                    </td>
-                                    <td>
-                                        @if (address.Location != null)
-                                        {
-                                            @if (!string.IsNullOrEmpty(address.Location.NeighborhoodName))
-                                            {
-                                                @address.Location.NeighborhoodName
-                                            }
-                                            @if (!string.IsNullOrEmpty(address.Location.StreetName))
-                                            {
-                                                <br />@address.Location.StreetName
-                                            }
-                                        }
-                                    </td>
-                                    <td>@address.CreatedDate.ToString("dd.MM.yyyy")</td>
-                                    <td class="text-center">
-                                        <button type="button" class="btn btn-sm btn-danger" 
-                                                onclick="confirmDelete(@address.Id)">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </td>
+                                    <th scope="col" width="10%">Active</th>
+                                    <th scope="col" width="25%">Address Details</th>
+                                    <th scope="col" width="20%">City/District</th>
+                                    <th scope="col" width="20%">Neighborhood/Street</th>
+                                    <th scope="col" width="15%">Date Added</th>
+                                    <th scope="col" width="10%" class="text-center">
+                                        Actions
+                                    </th>
                                 </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody>
+                                @foreach (var address in Model.EmployeeAddresses.OrderByDescending(a => a.IsActive).ThenByDescending(a => a.CreatedDate))
+                                {
+                                    <tr class="@(address.IsActive ? "table-active" : "")">
+                                        <td>
+                                            <div class="form-check form-switch d-flex justify-content-center">
+                                                <input type="checkbox" class="form-check-input custom-switch" 
+                                                       name="employeeAddressId" 
+                                                       value="@address.EmployeeAddressId" 
+                                                       @(address.IsActive ? "checked" : "") 
+                                                       onclick="handleCheckboxClick(this)" />
+                                            </div>
+                                        </td>
+                                        <td>
+                                            @if (address.Location != null)
+                                            {
+                                                <div>@(address.Location.DetailedAddress ?? "Not specified")</div>
+                                               
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (address.Location != null)
+                                            {
+                                                <strong>@address.Location.CityName</strong>
+                                                @if (!string.IsNullOrEmpty(address.Location.DistrictName))
+                                                {
+                                                    <div class="text-muted">@address.Location.DistrictName</div>
+                                                }
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (address.Location != null)
+                                            {
+                                                @if (!string.IsNullOrEmpty(address.Location.NeighborhoodName))
+                                                {
+                                                    <div>@address.Location.NeighborhoodName</div>
+                                                }
+                                                @if (!string.IsNullOrEmpty(address.Location.StreetName))
+                                                {
+                                                    <div class="text-muted">@address.Location.StreetName</div>
+                                                }
+                                            }
+                                        </td>
+                                        <td>@address.CreatedDate.ToString("dd.MM.yyyy")</td>
+                                        <td class="text-center">
+                                            <div class="btn-group">
+                                                <a href="/employee/addresses?addressId=@address.EmployeeAddressId" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmDelete(@address.EmployeeAddressId)">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="d-flex justify-content-end mt-3">
+                        <button type="submit" class="btn btn-primary" asp-page-handler="UpdateActiveAddress">
+                            <i class="fas fa-save me-1"></i> Save Changes
+                        </button>
+                    </div>
+                </form>
             }
         </div>
     </div>
@@ -131,5 +145,43 @@
             var deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
             deleteModal.show();
         }
+        
+        function handleCheckboxClick(checkbox) {
+            // Ensure only one checkbox can be checked at a time (like radio buttons)
+            var checkboxes = document.querySelectorAll('input[type="checkbox"][name="employeeAddressId"]');
+            checkboxes.forEach(function(cb) {
+                if (cb !== checkbox) {
+                    cb.checked = false;
+                }
+            });
+        }
+        
+        // Custom styles for the address management panel
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add custom styles
+            const style = document.createElement('style');
+            style.textContent = `
+                .custom-switch {
+                    width: 2em;
+                    height: 1em;
+                    cursor: pointer;
+                    border-color: #007bff;
+                }
+                
+                .custom-switch:checked {
+                    background-color: #007bff;
+                    border-color: #007bff;
+                }
+                
+                .address-table td {
+                    vertical-align: middle;
+                }
+                
+                .table-active {
+                    background-color: rgba(0, 123, 255, 0.1) !important;
+                }
+            `;
+            document.head.appendChild(style);
+        });
     </script>
 }

@@ -6,21 +6,21 @@
 }
 
 <div class="container mt-4">
-    <h2>Address Management</h2>
-    
-    @if (!string.IsNullOrEmpty(Model.StatusMessage))
-    {
-        var statusClass = Model.StatusMessage.Contains("error") || Model.StatusMessage.Contains("Error") ? "danger" : "success";
-        <div class="alert alert-@statusClass alert-dismissible fade show" role="alert" id="statusMessage">
-            @Model.StatusMessage
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h4 class="mb-0"><i class="fas fa-map-marker-alt me-2"></i>@(Model.EditingAddressId.HasValue ? "Edit Address" : "Add New Address")</h4>
+            <a asp-page="./AddressManager" class="btn btn-light"><i class="fas fa-arrow-left me-1"></i> Back to List</a>
         </div>
-    }
-    
-    <div class="card mt-4">
-        <div class="card-header bg-primary text-white">
-            <h4>@(Model.EditingAddressId.HasValue ? "Edit Address" : "Add New Address")</h4>
-        </div>
+        
+        @if (!string.IsNullOrEmpty(Model.StatusMessage))
+        {
+            var statusClass = Model.StatusMessage.Contains("error") || Model.StatusMessage.Contains("Error") ? "danger" : "success";
+            <div class="alert alert-@statusClass alert-dismissible fade show mx-3 mt-3" role="alert" id="statusMessage">
+                @Model.StatusMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        
         <div class="card-body">
             <form method="post" asp-page-handler="SaveAddress">
                 <div asp-validation-summary="ModelOnly" class="text-danger"></div>
@@ -88,58 +88,12 @@
                 </div>
 
                 <div class="d-flex">
-                    <button type="submit" class="btn btn-primary">@(Model.EditingAddressId.HasValue ? "Update" : "Save")</button>
-                    @if (Model.EditingAddressId.HasValue)
-                    {
-                        <a asp-page="./Addresses" class="btn btn-secondary ms-2">Cancel</a>
-                    }
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> @(Model.EditingAddressId.HasValue ? "Update" : "Save") Address
+                    </button>
                 </div>
             </form>
         </div>
-    </div>
-
-    <div class="mt-4">
-        <h4>My Addresses</h4>
-        @if (Model.EmployeeAddresses != null && Model.EmployeeAddresses.Any())
-        {
-            <div class="row">
-                @foreach (var address in Model.EmployeeAddresses)
-                {
-                    <div class="col-md-6 mb-3">
-                        <div class="card @(address.IsActive ? "border-primary" : "")">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0">@(address.IsActive ? "Active Address" : "Address")</h5>
-                                <div>
-                                    <a asp-page="./Addresses" asp-route-addressId="@address.EmployeeAddressId" class="btn btn-sm btn-outline-primary">Edit</a>
-                                    <button type="button" class="btn btn-sm btn-outline-danger" 
-                                            onclick="confirmDelete(@address.EmployeeAddressId)">
-                                        Delete
-                                    </button>
-                                    @if (!address.IsActive)
-                                    {
-                                        <form method="post" asp-page-handler="SetActiveAddress" style="display: inline;">
-                                            <input type="hidden" name="addressId" value="@address.EmployeeAddressId" />
-                                            <button type="submit" class="btn btn-sm btn-outline-success">Set Active</button>
-                                        </form>
-                                    }
-                                </div>
-                            </div>
-                            <div class="card-body">
-                                <p><strong>City:</strong> @address.Location.CityName</p>
-                                <p><strong>District:</strong> @address.Location.DistrictName</p>
-                                <p><strong>Neighborhood:</strong> @address.Location.NeighborhoodName</p>
-                                <p><strong>Street:</strong> @address.Location.StreetName</p>
-                                <p><strong>Details:</strong> @address.Location.DetailedAddress</p>
-                            </div>
-                        </div>
-                    </div>
-                }
-            </div>
-        }
-        else
-        {
-            <div class="alert alert-info">You don't have any saved addresses yet.</div>
-        }
     </div>
 </div>
 
@@ -294,6 +248,14 @@
         function confirmDelete(addressId) {
             document.getElementById('deleteAddressId').value = addressId;
             new bootstrap.Modal(document.getElementById('deleteModal')).show();
+        }
+        
+        // Confirm active address change
+        function confirmSetActive(addressId, addressDetail) {
+            if (confirm('Are you sure you want to change your active location to "' + addressDetail + '"?')) {
+                // If confirmed, submit the form
+                document.getElementById('form-active-' + addressId).submit();
+            }
         }
         
         // Initialize the page

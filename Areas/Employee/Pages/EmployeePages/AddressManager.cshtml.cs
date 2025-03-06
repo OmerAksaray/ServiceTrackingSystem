@@ -67,17 +67,17 @@ namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
                 return RedirectToPage("/Account/Login", new { area = "Identity" });
             }
 
-            // Önce kullanıcının employee kaydını bulalım
+            // Find the employee record
             var employee = await _context.Employees
                 .FirstOrDefaultAsync(e => e.Id == user.Id);
 
             if (employee == null)
             {
                 StatusMessage = "Error! Employee record not found.";
-                return Page();
+                return RedirectToPage();
             }
 
-            // Kullanıcının tüm adreslerini getir
+            // Get all addresses for this employee
             var addresses = await _context.EmployeeAddresses
                 .Where(a => a.EmployeeId == employee.Id)
                 .ToListAsync();
@@ -89,17 +89,18 @@ namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
                 return RedirectToPage();
             }
 
-            // Önce tüm adresleri pasif yap
+            // First deactivate all addresses
             foreach (var address in addresses)
             {
                 address.IsActive = false;
+                address.UpdatedDate = DateTime.UtcNow;
             }
 
-            // Seçilen adresi aktif yap
+            // Set the selected address as active
             selectedAddress.IsActive = true;
             selectedAddress.UpdatedDate = DateTime.UtcNow;
 
-            // Değişiklikleri kaydet
+            // Save the changes
             await _context.SaveChangesAsync();
 
             StatusMessage = "Active address successfully updated.";
@@ -127,7 +128,7 @@ namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
             // Find the address with its associated location
             var address = await _context.EmployeeAddresses
                 .Include(e => e.Location)
-                .FirstOrDefaultAsync(a => a.Id == addressId && a.EmployeeId == employee.Id);
+                .FirstOrDefaultAsync(a => a.EmployeeAddressId == addressId && a.EmployeeId == employee.Id);
 
             if (address == null)
             {
@@ -165,7 +166,7 @@ namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
             
             // Check if the location is used by other employee addresses
             var otherAddressesWithSameLocation = await _context.EmployeeAddresses
-                .Where(a => a.LocationId == address.LocationId && a.Id != address.Id)
+                .Where(a => a.EmployeeAddressId == address.EmployeeAddressId && a.Id != address.Id)
                 .ToListAsync();
                 
             // If no other addresses use this location, delete it
@@ -181,6 +182,110 @@ namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
                 StatusMessage = "Address successfully deleted.";
             }
 
+            return RedirectToPage();
+        }
+
+        /// <summary>
+        /// AJAX handler for setting an address as active with confirmation
+        /// </summary>
+        /// <param name="addressId">The ID of the address to set as active</param>
+        /// <returns>JSON result with success status and message</returns>
+        public async Task<JsonResult> OnPostSetActiveAddressAjaxAsync(int addressId)
+        {
+            try
+            {
+                var user = await _userManager.GetUserAsync(User);
+                if (user == null)
+                {
+                    return new JsonResult(new { success = false, message = "User not found." });
+                }
+
+                // Find the employee record
+                var employee = await _context.Employees
+                    .FirstOrDefaultAsync(e => e.Id == user.Id);
+
+                if (employee == null)
+                {
+                    return new JsonResult(new { success = false, message = "Employee record not found." });
+                }
+
+                // Get all addresses for this employee
+                var addresses = await _context.EmployeeAddresses
+                    .Where(a => a.EmployeeId == employee.Id)
+                    .ToListAsync();
+
+                var selectedAddress = addresses.FirstOrDefault(a => a.Id == addressId);
+                if (selectedAddress == null)
+                {
+                    return new JsonResult(new { success = false, message = "Selected address not found." });
+                }
+
+                // Deactivate all addresses
+                foreach (var address in addresses)
+                {
+                    address.IsActive = false;
+                }
+
+                // Set the selected address as active
+                selectedAddress.IsActive = true;
+                selectedAddress.UpdatedDate = DateTime.UtcNow;
+
+                // Save changes
+                await _context.SaveChangesAsync();
+
+                return new JsonResult(new { success = true, message = "Active address successfully updated." });
+            }
+            catch (Exception ex)
+            {
+                return new JsonResult(new { success = false, message = $"An error occurred: {ex.Message}" });
+            }
+        }
+
+        public async Task<IActionResult> OnPostUpdateActiveAddress(int employeeAddressId)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return RedirectToPage("/Account/Login", new { area = "Identity" });
+            }
+
+            // Find the employee record
+            var employee = await _context.Employees
+                .FirstOrDefaultAsync(e => e.Id == user.Id);
+
+            if (employee == null)
+            {
+                StatusMessage = "Error! Employee record not found.";
+                return RedirectToPage();
+            }
+
+            // Get all addresses for this employee
+            var addresses = await _context.EmployeeAddresses
+                .Where(a => a.EmployeeId == employee.Id)
+                .ToListAsync();
+
+            var selectedAddress = addresses.FirstOrDefault(a => a.EmployeeAddressId == employeeAddressId);
+            if (selectedAddress == null)
+            {
+                StatusMessage = "Error! Selected address not found.";
+                return RedirectToPage();
+            }
+
+            // First deactivate all addresses
+            foreach (var address in addresses)
+            {
+                address.IsActive = false;
+                address.UpdatedDate = DateTime.UtcNow;
+            }
+
+            // Set the selected address as active
+            selectedAddress.IsActive = true;
+            selectedAddress.UpdatedDate = DateTime.UtcNow;
+
+            // Save the changes
+            await _context.SaveChangesAsync();
+
+            StatusMessage = "Active address successfully updated.";
             return RedirectToPage();
         }
     }

@@ -115,8 +115,6 @@ namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
                 EmployeeAddresses = await _context.EmployeeAddresses
                     .Include(a => a.Location)
                     .Where(a => a.EmployeeId == userId)
-                    .OrderByDescending(a => a.IsActive)
-                    .ThenByDescending(a => a.UpdatedDate)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -572,6 +570,29 @@ namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
                     throw new Exception($"City with ID {cityId} not found in API response");
                 }
 
+                // If the address will be active, first deactivate all other addresses
+                // Do this in all cases upfront to ensure consistency
+                if (Input.IsActive)
+                {
+                    _logger.LogInformation("Deactivating all existing active addresses since the new/updated address will be active");
+                    var activeAddresses = await _context.EmployeeAddresses
+                        .Where(ea => ea.EmployeeId == user.Id && ea.IsActive)
+                        .ToListAsync();
+
+                    foreach (var activeAddress in activeAddresses)
+                    {
+                        activeAddress.IsActive = false;
+                        activeAddress.UpdatedDate = DateTime.UtcNow;
+                    }
+                    
+                    // Save changes immediately to avoid potential conflicts
+                    if (activeAddresses.Any())
+                    {
+                        await _context.SaveChangesAsync();
+                        _logger.LogInformation($"Deactivated {activeAddresses.Count} previously active addresses");
+                    }
+                }
+
                 if (addressId.HasValue)
                 {
                     // Update existing address
@@ -599,21 +620,7 @@ namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
                     addressToUpdate.Location.AddressLine = Input.Address ?? string.Empty; // Provide empty string if Address is null
                     addressToUpdate.Location.UpdatedDate = DateTime.UtcNow;
 
-                    // If marked as active, deactivate other addresses
-                    if (Input.IsActive && !addressToUpdate.IsActive)
-                    {
-                        _logger.LogInformation("Deactivating other addresses since this one is being set as active");
-                        var activeAddresses = await _context.EmployeeAddresses
-                            .Where(ea => ea.EmployeeId == user.Id && ea.IsActive && ea.EmployeeAddressId != addressId.Value)
-                            .ToListAsync();
-
-                        foreach (var activeAddress in activeAddresses)
-                        {
-                            activeAddress.IsActive = false;
-                            activeAddress.UpdatedDate = DateTime.UtcNow;
-                        }
-                    }
-
+                    // Set the active status (we already deactivated other addresses if needed)
                     addressToUpdate.IsActive = Input.IsActive;
                     addressToUpdate.UpdatedDate = DateTime.UtcNow;
 
@@ -644,33 +651,12 @@ namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
                     await _context.SaveChangesAsync();
                     _logger.LogInformation($"Created new location with ID: {location.LocationId}");
 
-                    // If it's set as active, deactivate all other addresses
-                    if (Input.IsActive)
-                    {
-                        _logger.LogInformation("Deactivating other addresses since new address is active");
-                        var activeAddresses = await _context.EmployeeAddresses
-                            .Where(ea => ea.EmployeeId == user.Id && ea.IsActive)
-                            .ToListAsync();
-
-                        foreach (var activeAddress in activeAddresses)
-                        {
-                            activeAddress.IsActive = false;
-                            activeAddress.UpdatedDate = DateTime.UtcNow;
-                        }
-                        
-                        // Save the changes to existing addresses
-                        if (activeAddresses.Any())
-                        {
-                            await _context.SaveChangesAsync();
-                        }
-                    }
-
                     // Create the EmployeeAddress record linking the employee and the new location
                     var employeeAddress = new EmployeeAddress
                     {
                         EmployeeId = user.Id,
                         LocationId = location.LocationId,
-                        IsActive = Input.IsActive,
+                        IsActive = Input.IsActive, // This will be true if user checked the active checkbox
                         CreatedDate = DateTime.UtcNow,
                         UpdatedDate = DateTime.UtcNow
                     };
@@ -760,7 +746,7 @@ namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
                 }
                 else
                 {
-                    _logger.LogWarning($"Address with ID {addressId} not found or does not belong to the current user.");
+                    _logger.LogWarning($"Address with ID {addressId} not found or doesn't belong to the current user.");
                     StatusMessage = "Error! Address to delete not found or you don't have permission to delete it.";
                 }
             }
@@ -824,9 +810,62 @@ namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
             return RedirectToPage();
         }
 
-      
+        /// <summary>
+        /// Handler for setting an address as active via AJAX
+        /// </summary>
+        /// <param name="addressId">The ID of the address to set as active</param>
+        /// <returns>JSON result with success status and message</returns>
+        public async Task<JsonResult> OnPostSetActiveAddressAjaxAsync(int addressId)
+        {
+            try
+            {
+                _logger.LogInformation($"Setting address ID {addressId} as active via AJAX");
+                
+                // Get the current user
+                var user = await _userManager.GetUserAsync(User);
+                if (user == null)
+                {
+                    _logger.LogWarning("User not found");
+                    return new JsonResult(new { success = false, message = "User not found." });
+                }
 
-      
+                // Find the address to set as active
+                var addressToSetActive = await _context.EmployeeAddresses
+                    .Include(ea => ea.Location)
+                    .FirstOrDefaultAsync(ea => ea.EmployeeAddressId == addressId && ea.EmployeeId == user.Id);
 
+                if (addressToSetActive == null)
+                {
+                    _logger.LogWarning($"Address ID {addressId} not found or doesn't belong to user {user.Id}");
+                    return new JsonResult(new { success = false, message = "Address not found or you don't have permission to modify it." });
+                }
+
+                // Deactivate all addresses for this employee
+                var activeAddresses = await _context.EmployeeAddresses
+                    .Where(ea => ea.EmployeeId == user.Id && ea.IsActive)
+                    .ToListAsync();
+
+                foreach (var activeAddress in activeAddresses)
+                {
+                    activeAddress.IsActive = false;
+                    activeAddress.UpdatedDate = DateTime.UtcNow;
+                }
+
+                // Set the selected address as active
+                addressToSetActive.IsActive = true;
+                addressToSetActive.UpdatedDate = DateTime.UtcNow;
+
+                // Save the changes
+                await _context.SaveChangesAsync();
+                _logger.LogInformation($"Address ID {addressId} successfully set as active via AJAX");
+
+                return new JsonResult(new { success = true, message = "Address successfully set as active." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error setting address ID {addressId} as active via AJAX");
+                return new JsonResult(new { success = false, message = $"An error occurred: {ex.Message}" });
+            }
+        }
     }
 }
