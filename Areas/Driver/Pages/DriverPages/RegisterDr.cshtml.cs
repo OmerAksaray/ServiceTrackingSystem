@@ -30,7 +30,7 @@ namespace ServiceTrackingSystem.Areas.Driver.Pages.DriverPages
         private readonly ILogger<RegisterModelDr> _logger;
         private readonly IEmailSender _emailSender;
         private readonly AppDbContext _context;
-        private readonly RoleManager<ApplicationUser> _roleManager;
+        private readonly RoleManager<IdentityRole<int>> _roleManager;
 
         public RegisterModelDr(
             UserManager<ApplicationUser> userManager,
@@ -38,7 +38,7 @@ namespace ServiceTrackingSystem.Areas.Driver.Pages.DriverPages
             SignInManager<ApplicationUser> signInManager,
             ILogger<RegisterModelDr> logger,
             IEmailSender emailSender,
-            RoleManager<ApplicationUser> roleManager,
+            RoleManager<IdentityRole<int>> roleManager,
             AppDbContext context)
         {
             _userManager = userManager;
@@ -123,7 +123,15 @@ namespace ServiceTrackingSystem.Areas.Driver.Pages.DriverPages
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User created a new account with password.");
-                _userManager.AddToRoleAsync(driver, driver.UserType);
+                    
+                    // Ensure the role exists before adding the user to it
+                    if (!await _roleManager.RoleExistsAsync("DRIVER"))
+                    {
+                        await _roleManager.CreateAsync(new IdentityRole<int>("DRIVER"));
+                    }
+                    
+                    // Add user to role
+                    await _userManager.AddToRoleAsync(driver, "DRIVER");
 
                     var userId = await _userManager.GetUserIdAsync(driver);
                     var code = await _userManager.GenerateEmailConfirmationTokenAsync(driver);
@@ -156,6 +164,7 @@ namespace ServiceTrackingSystem.Areas.Driver.Pages.DriverPages
                 }
             }
 
+            // If we got this far, something failed, redisplay form
             return Page();
         }
 

@@ -1,3 +1,26 @@
-﻿@{
-    Layout = "_Layout";
+@{
+    
+    var userType = User.Claims.FirstOrDefault(c => c.Type.Contains("role"))?.Value;
+    if (string.IsNullOrEmpty(userType))
+    {
+        Layout = "_Layout";
+        //@* Debug information *@
+        <text>@* Current UserType: @userType *@</text>
+        <text>@* Is authenticated: @User.Identity.IsAuthenticated *@</text>
+        <text>@* Available claims: @string.Join(", ", User.Claims.Select(c => $"{c.Type}: {c.Value}")) *@</text>
+    }
+    else if (userType == "EMPLOYEE")
+    {
+        Layout = "/Areas/Employee/Pages/Shared/_EmployeeLayout.cshtml";
+    }
+    else if (userType == "DRIVER")
+    {
+
+        Layout = "/Areas/Driver/Pages/Shared/_DriverLayout.cshtml";
+
+    }
+    else
+    {
+        Layout = "_Layout";
+    }
 }

@@ -1,8 +1,122 @@
-﻿@{
+@{
     ViewData["Title"] = "Home Page";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<!-- Hero Section -->
+<section class="hero-section rounded-custom fade-in">
+    <div class="hero-content">
+        <h1 class="hero-title slide-up">Service Tracking System</h1>
+        <p class="hero-subtitle slide-up">Streamline your service operations with our comprehensive tracking solution</p>
+        <div class="hero-buttons">
+            <a asp-area="Identity" asp-page="/Account/Login" class="btn btn-primary slide-up">Login</a>
+            <div class="dropdown d-inline-block slide-up">
+                <button class="btn btn-outline-primary dropdown-toggle" type="button" id="registerDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    Sign Up
+                </button>
+                <ul class="dropdown-menu shadow-custom" aria-labelledby="registerDropdown">
+                    <li><a class="dropdown-item" asp-area="Employee" asp-page="/EmployeePages/RegisterEmp">Employee Registration</a></li>
+                    <li><a class="dropdown-item" asp-area="Driver" asp-page="/DriverPages/RegisterDr">Driver Registration</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section id="features" class="features-section">
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col-12 text-center">
+                <h2 class="text-gradient mb-4 scroll-animate">Our Features</h2>
+                <p class="text-muted mb-5 scroll-animate">Discover how our service tracking system can help your business</p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="feature-card shadow-custom scroll-animate">
+                    <div class="feature-icon">
+                        <i class="bi bi-speedometer2"></i>
+                    </div>
+                    <h3 class="feature-title">Real-time Tracking</h3>
+                    <p>Monitor your service requests in real-time with our advanced tracking system</p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="feature-card shadow-custom scroll-animate">
+                    <div class="feature-icon">
+                        <i class="bi bi-people"></i>
+                    </div>
+                    <h3 class="feature-title">Team Management</h3>
+                    <p>Efficiently manage your employees and drivers with our comprehensive tools</p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="feature-card shadow-custom scroll-animate">
+                    <div class="feature-icon">
+                        <i class="bi bi-graph-up"></i>
+                    </div>
+                    <h3 class="feature-title">Analytics & Reports</h3>
+                    <p>Gain valuable insights with detailed analytics and customizable reports</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action Section -->
+<section class="bg-gradient-light p-5 rounded-custom shadow-custom my-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8 text-center text-lg-start">
+                <h2 class="mb-3">Ready to streamline your service operations?</h2>
+                <p class="mb-lg-0">Join thousands of businesses that trust our service tracking system</p>
+            </div>
+            <div class="col-lg-4 text-center text-lg-end mt-4 mt-lg-0">
+                <div class="dropdown d-inline-block">
+                    <button class="btn btn-primary dropdown-toggle" type="button" id="getStartedDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        Get Started Today
+                    </button>
+                    <ul class="dropdown-menu shadow-custom" aria-labelledby="getStartedDropdown">
+                        <li><a class="dropdown-item" asp-area="Employee" asp-page="/EmployeePages/RegisterEmp">Register as Employee</a></li>
+                        <li><a class="dropdown-item" asp-area="Driver" asp-page="/DriverPages/RegisterDr">Register as Driver</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Contact Section -->
+<section id="contact" class="contact-section mb-5">
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col-12 text-center">
+                <h2 class="text-gradient mb-4 scroll-animate">Contact Us</h2>
+                <p class="text-muted mb-5 scroll-animate">Have questions about our service tracking system? Get in touch with us.</p>
+            </div>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="card shadow-custom p-4 scroll-animate">
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Your Name</label>
+                            <input type="text" class="form-control" id="name" placeholder="Enter your name">
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email Address</label>
+                            <input type="email" class="form-control" id="email" placeholder="Enter your email">
+                        </div>
+                        <div class="mb-3">
+                            <label for="message" class="form-label">Message</label>
+                            <textarea class="form-control" id="message" rows="4" placeholder="Enter your message"></textarea>
+                        </div>
+                        <div class="d-grid">
+                            <button type="button" class="btn btn-primary">Send Message</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

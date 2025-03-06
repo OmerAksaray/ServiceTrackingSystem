@@ -32,7 +32,7 @@ namespace ServiceTrackingSystem.Areas.Employee.Controllers
                 {
                     UserName = model.Email,
                     Email = model.Email,
-                    UserType = "Employee"
+                    UserType = "EMPLOYEE"
                 };
 
                 var result = await _userManager.CreateAsync(user, model.Password);

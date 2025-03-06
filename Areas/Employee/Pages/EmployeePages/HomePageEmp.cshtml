@@ -1,4 +1,215 @@
-﻿@page
+@page "/employee/home"
 @model ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages.HomePageEmpModel
 @{
+    ViewData["Title"] = "Employee Home Page";
+}
+
+<div class="container mt-4">
+    <h2>Welcome Employee</h2>
+    
+    <div class="card mt-4">
+        <div class="card-header">
+            <h4>Address Information</h4>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                <div class="form-group">
+                    <label for="citySelect">City</label>
+                    <select id="citySelect" name="Input.Location.CityId" class="form-control" asp-items="@(new SelectList(Model.Cities, "CityId", "CityName"))" onchange="loadDistricts()">
+                        <option value="">Select City</option>
+                    </select>
+                    <input type="hidden" id="cityNameInput" name="Input.Location.CityName" />
+                </div>
+
+                <div class="form-group">
+                    <label for="districtSelect">District</label>
+                    <select id="districtSelect" name="Input.Location.DistrictName" class="form-control" disabled onchange="loadNeighborhoods()">
+                        <option value="">Select District</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="neighborhoodSelect">Neighborhood</label>
+                    <select id="neighborhoodSelect" name="Input.Location.NeighborhoodName" class="form-control" disabled onchange="loadStreets()">
+                        <option value="">Select Neighborhood</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="streetSelect">Street</label>
+                    <select id="streetSelect" name="Input.Location.StreetName" class="form-control" disabled>
+                        <option value="">Select Street</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Input.Address">Detailed Address</label>
+                    <textarea asp-for="Input.Address" class="form-control" rows="3"></textarea>
+                    <span asp-validation-for="Input.Address" class="text-danger"></span>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input asp-for="Input.IsActive" class="form-check-input" type="checkbox">
+                    <label asp-for="Input.IsActive" class="form-check-label">
+                        Set as Active Address
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Save Address</button>
+            </form>
+
+          @*   @if (@Model.EmployeeAddress != null && @Model.EmployeeAddress.Any())
+            {
+                <div class="mt-4">
+                    <h5>Your Addresses</h5>
+                    <div class="list-group">
+                        @foreach (var address in Model.EmployeeAddress)
+
+                        {
+                            <div class="list-group-item @(address.IsActive ? "active" : "")">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <p class="mb-1">@address.Address</p>
+                                    @if (address.IsActive)
+                                    {
+                                        <span class="badge bg-success ms-2">Active</span>
+                                    }
+                                </div>
+                                <div class="btn-group mt-2">
+                                    <form method="post" asp-page-handler="SetActive" style="display: inline;">
+                                        <input type="hidden" name="addressId" value="@address.Id" />
+                                        <button type="submit" class="btn btn-sm btn-outline-primary">Set Active</button>
+                                    </form>
+                                    <form method="post" asp-page-handler="Delete" style="display: inline;">
+                                        <input type="hidden" name="addressId" value="@address.Id" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete this address?')">Delete</button>
+                                    </form>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            } *@
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        function loadDistricts() {
+            const citySelect = document.getElementById('citySelect');
+            const cityNameInput = document.getElementById('cityNameInput');
+            const districtSelect = document.getElementById('districtSelect');
+            const neighborhoodSelect = document.getElementById('neighborhoodSelect');
+            const streetSelect = document.getElementById('streetSelect');
+            
+            const selectedCityId = citySelect.value;
+            const selectedCityName = citySelect.options[citySelect.selectedIndex].text;
+            cityNameInput.value = selectedCityName;
+            
+            if (selectedCityId) {
+                fetch(`?handler=Districts&cityId=${selectedCityId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        districtSelect.innerHTML = '<option value="">Select District</option>';
+                        data.forEach(district => {
+                            const option = document.createElement('option');
+                            option.value = district.districtName;
+                            option.textContent = district.districtName;
+                            districtSelect.appendChild(option);
+                        });
+                        districtSelect.disabled = false;
+                        neighborhoodSelect.disabled = true;
+                        streetSelect.disabled = true;
+                        neighborhoodSelect.innerHTML = '<option value="">Select Neighborhood</option>';
+                        streetSelect.innerHTML = '<option value="">Select Street</option>';
+                    });
+            } else {
+                districtSelect.disabled = true;
+                neighborhoodSelect.disabled = true;
+                streetSelect.disabled = true;
+                districtSelect.innerHTML = '<option value="">Select District</option>';
+                neighborhoodSelect.innerHTML = '<option value="">Select Neighborhood</option>';
+                streetSelect.innerHTML = '<option value="">Select Street</option>';
+            }
+        }
+
+        function loadNeighborhoods() {
+            const citySelect = document.getElementById('citySelect');
+            const districtSelect = document.getElementById('districtSelect');
+            const neighborhoodSelect = document.getElementById('neighborhoodSelect');
+            const streetSelect = document.getElementById('streetSelect');
+            
+            const selectedCityId = citySelect.value;
+            const selectedDistrict = districtSelect.value;
+            
+            if (selectedDistrict) {
+                fetch(`?handler=Neighborhoods&cityId=${selectedCityId}&district=${encodeURIComponent(selectedDistrict)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        neighborhoodSelect.innerHTML = '<option value="">Select Neighborhood</option>';
+                        data.forEach(neighborhood => {
+                            const option = document.createElement('option');
+                            option.value = neighborhood.neighborhoodName;
+                            option.textContent = neighborhood.neighborhoodName;
+                            neighborhoodSelect.appendChild(option);
+                        });
+                        neighborhoodSelect.disabled = false;
+                        streetSelect.disabled = true;
+                        streetSelect.innerHTML = '<option value="">Select Street</option>';
+                    });
+            } else {
+                neighborhoodSelect.disabled = true;
+                streetSelect.disabled = true;
+                neighborhoodSelect.innerHTML = '<option value="">Select Neighborhood</option>';
+                streetSelect.innerHTML = '<option value="">Select Street</option>';
+            }
+        }
+
+        function loadStreets() {
+            const citySelect = document.getElementById('citySelect');
+            const neighborhoodSelect = document.getElementById('neighborhoodSelect');
+            const streetSelect = document.getElementById('streetSelect');
+            
+            const selectedCityId = citySelect.value;
+            const selectedNeighborhood = neighborhoodSelect.value;
+            
+            if (selectedNeighborhood) {
+                fetch(`?handler=Streets&cityId=${selectedCityId}&neighborhood=${encodeURIComponent(selectedNeighborhood)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        streetSelect.innerHTML = '<option value="">Select Street</option>';
+                        data.forEach(street => {
+                            const option = document.createElement('option');
+                            option.value = street.streetName;
+                            option.textContent = street.streetName;
+                            streetSelect.appendChild(option);
+                        });
+                        streetSelect.disabled = false;
+                    });
+            } else {
+                streetSelect.disabled = true;
+                streetSelect.innerHTML = '<option value="">Select Street</option>';
+            }
+        }
+
+        // Add antiforgery token to fetch requests
+        document.addEventListener('DOMContentLoaded', function () {
+            const tokenElement = document.querySelector('input[name="__RequestVerificationToken"]');
+            if (tokenElement) {
+                const token = tokenElement.value;
+                const oldFetch = window.fetch;
+                window.fetch = function (url, options) {
+                    if (url.includes('?handler=')) {
+                        if (!options) options = {};
+                        if (!options.headers) options.headers = {};
+                        options.headers['RequestVerificationToken'] = token;
+                    }
+                    return oldFetch(url, options);
+                };
+            }
+        });
+    </script>
 }

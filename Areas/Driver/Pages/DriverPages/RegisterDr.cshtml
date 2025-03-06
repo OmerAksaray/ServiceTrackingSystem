@@ -5,57 +5,139 @@
     ViewData["Title"] = "Driver Registration";
 }
 
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <h1 class="text-center">@ViewData["Title"]</h1>
-        <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
-            <h2 class="text-center">Create a new Driver account.</h2>
-            <hr />
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+<div class="row justify-content-center mt-4">
+    <div class="col-md-8 col-lg-6">
+        <div class="form-card fade-in">
+            <h1 class="text-gradient text-center mb-4">@ViewData["Title"]</h1>
+            <p class="text-center text-muted mb-4">Create a new driver account to join our service tracking system</p>
+            
+            <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post" class="needs-validation" novalidate>
+                <div asp-validation-summary="ModelOnly" class="validation-message rounded-custom p-3 mb-4 bg-danger bg-opacity-10"></div>
 
-            <div class="form-floating mb-3">
-                <input asp-for="Input.Name" class="form-control" aria-required="true" />
-                <label asp-for="Input.Name"></label>
-                <span asp-validation-for="Input.Name" class="text-danger"></span>
-            </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="form-floating">
+                            <input asp-for="Input.Name" class="form-control" aria-required="true" required />
+                            <label asp-for="Input.Name"></label>
+                            <span asp-validation-for="Input.Name" class="validation-message"></span>
+                            <div class="invalid-feedback">Please enter your name.</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="form-floating">
+                            <input asp-for="Input.Surname" class="form-control" aria-required="true" required />
+                            <label asp-for="Input.Surname"></label>
+                            <span asp-validation-for="Input.Surname" class="validation-message"></span>
+                            <div class="invalid-feedback">Please enter your surname.</div>
+                        </div>
+                    </div>
+                </div>
 
-            <div class="form-floating mb-3">
-                <input asp-for="Input.Surname" class="form-control" aria-required="true" />
-                <label asp-for="Input.Surname"></label>
-                <span asp-validation-for="Input.Surname" class="text-danger"></span>
-            </div>
+                <div class="mb-3">
+                    <div class="form-floating">
+                        <input asp-for="Input.LicenseNumber" class="form-control" aria-required="true" required />
+                        <label asp-for="Input.LicenseNumber"></label>
+                        <span asp-validation-for="Input.LicenseNumber" class="validation-message"></span>
+                        <div class="invalid-feedback">Please enter your license number.</div>
+                    </div>
+                </div>
 
-            <div class="form-floating mb-3">
-                <input asp-for="Input.LicenseNumber" class="form-control" aria-required="true" />
-                <label asp-for="Input.LicenseNumber"></label>
-                <span asp-validation-for="Input.LicenseNumber" class="text-danger"></span>
-            </div>
+                <div class="mb-3">
+                    <div class="form-floating">
+                        <input asp-for="Input.Email" class="form-control" autocomplete="username" aria-required="true" required type="email" />
+                        <label asp-for="Input.Email"></label>
+                        <span asp-validation-for="Input.Email" class="validation-message"></span>
+                        <div class="invalid-feedback">Please enter a valid email address.</div>
+                    </div>
+                </div>
 
-            <div class="form-floating mb-3">
-                <input asp-for="Input.Email" class="form-control" autocomplete="username" aria-required="true" />
-                <label asp-for="Input.Email"></label>
-                <span asp-validation-for="Input.Email" class="text-danger"></span>
-            </div>
+                <div class="mb-3">
+                    <div class="form-floating">
+                        <input asp-for="Input.Password" class="form-control" autocomplete="new-password" aria-required="true" required minlength="6" />
+                        <label asp-for="Input.Password"></label>
+                        <span asp-validation-for="Input.Password" class="validation-message"></span>
+                        <div class="invalid-feedback">Password must be at least 6 characters long.</div>
+                    </div>
+                </div>
 
-            <div class="form-floating mb-3">
-                <input asp-for="Input.Password" class="form-control" autocomplete="new-password" aria-required="true" />
-                <label asp-for="Input.Password"></label>
-                <span asp-validation-for="Input.Password" class="text-danger"></span>
-            </div>
+                <div class="mb-4">
+                    <div class="form-floating">
+                        <input asp-for="Input.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" required />
+                        <label asp-for="Input.ConfirmPassword"></label>
+                        <span asp-validation-for="Input.ConfirmPassword" class="validation-message"></span>
+                        <div class="invalid-feedback">Please confirm your password.</div>
+                    </div>
+                </div>
 
-            <div class="form-floating mb-3">
-                <input asp-for="Input.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" />
-                <label asp-for="Input.ConfirmPassword"></label>
-                <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
-            </div>
-
-            <div class="text-center">
-                <button id="registerSubmit" type="submit" class="w-100 btn btn-lg btn-primary">Register</button>
-            </div>
-        </form>
+                <div class="d-grid gap-2 mb-3">
+                    <button id="registerSubmit" type="submit" class="btn btn-primary btn-lg">Create Account</button>
+                </div>
+                
+                <div class="text-center mt-4">
+                    <p class="text-muted">Already have an account? <a asp-area="Identity" asp-page="/Account/Login" class="text-primary">Log in</a></p>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Custom form validation enhancement
+        (function () {
+            'use strict'
+            
+            // Fetch all forms that need validation
+            const forms = document.querySelectorAll('.needs-validation')
+            
+            // Loop over them and prevent submission
+            Array.from(forms).forEach(form => {
+                form.addEventListener('submit', event => {
+                    if (!form.checkValidity()) {
+                        event.preventDefault()
+                        event.stopPropagation()
+                    }
+                    
+                    form.classList.add('was-validated')
+                }, false)
+                
+                // Add visual feedback as user types
+                const inputs = form.querySelectorAll('input')
+                inputs.forEach(input => {
+                    input.addEventListener('blur', () => {
+                        if (input.value.trim() !== '') {
+                            input.classList.add('is-touched')
+                        } else {
+                            input.classList.remove('is-touched')
+                        }
+                    })
+                })
+                
+                // Password confirmation validation
+                const password = form.querySelector('input[name="Input.Password"]')
+                const confirmPassword = form.querySelector('input[name="Input.ConfirmPassword"]')
+                
+                if (password && confirmPassword) {
+                    confirmPassword.addEventListener('input', () => {
+                        if (password.value !== confirmPassword.value) {
+                            confirmPassword.setCustomValidity('Passwords do not match.')
+                        } else {
+                            confirmPassword.setCustomValidity('')
+                        }
+                    })
+                    
+                    password.addEventListener('input', () => {
+                        if (confirmPassword.value) {
+                            if (password.value !== confirmPassword.value) {
+                                confirmPassword.setCustomValidity('Passwords do not match.')
+                            } else {
+                                confirmPassword.setCustomValidity('')
+                            }
+                        }
+                    })
+                }
+            })
+        })()
+    </script>
 }

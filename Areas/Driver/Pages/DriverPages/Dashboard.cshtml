@@ -1,0 +1,36 @@
+@page "/driver/dashboard"
+@model ServiceTrackingSystem.Areas.Driver.Pages.DriverPages.DashboardModel
+@{
+    ViewData["Title"] = "Driver Dashboard";
+    Layout = "_DriverLayout";
+}
+
+<div class="container mt-4">
+    <h2>Driver Dashboard</h2>
+    
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Today's Schedule</h5>
+                </div>
+                <div class="card-body">
+                    <p>Welcome to your driver dashboard. Your daily schedule and routes will appear here.</p>
+                    <!-- Schedule content will go here -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Active Routes</h5>
+                </div>
+                <div class="card-body">
+                    <p>You currently have no active routes assigned.</p>
+                    <!-- Routes content will go here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

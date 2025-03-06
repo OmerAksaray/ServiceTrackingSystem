@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using ServiceTrackingSystem.Models;
@@ -15,6 +15,11 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole<int>>()
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
 
+// Add claims principal factory
+builder.Services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, UserClaimsPrincipalFactory>();
+
+// HttpClient Factory ekleyelim - API istekleri için
+builder.Services.AddHttpClient();
 
 // 📌 Çerez (Cookie) Yapılandırması
 builder.Services.ConfigureApplicationCookie(options =>
@@ -47,6 +52,8 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
+    // BrowserLink'i devre dışı bırakarak CORS hatalarını önlüyoruz
+    // app.UseBrowserLink(); 
 }
 else
 {

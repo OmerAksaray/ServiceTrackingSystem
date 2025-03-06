@@ -21,11 +21,13 @@ namespace ServiceTrackingSystem.Areas.Identity.Pages.Account
     public class LoginModel : PageModel
     {
         private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly UserManager<ApplicationUser> _userManager;
         private readonly ILogger<LoginModel> _logger;
 
-        public LoginModel(SignInManager<ApplicationUser> signInManager, ILogger<LoginModel> logger)
+        public LoginModel(SignInManager<ApplicationUser> signInManager, UserManager<ApplicationUser> userManager, ILogger<LoginModel> logger)
         {
             _signInManager = signInManager;
+            _userManager = userManager;
             _logger = logger;
         }
 
@@ -116,6 +118,23 @@ namespace ServiceTrackingSystem.Areas.Identity.Pages.Account
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User logged in.");
+                    
+                    // Get the user and check their UserType to redirect accordingly
+                    var user = await _userManager.FindByEmailAsync(Input.Email);
+                    
+                    if (user != null)
+                    {
+                        // Redirect based on user type
+                        if (user.UserType == "Driver")
+                        {
+                            return RedirectToPage("/DriverPages/Dashboard", new { area = "Driver" });
+                        }
+                        else if (user.UserType == "Employee")
+                        {
+                            return RedirectToPage("/EmployeePages/Addresses", new { area = "Employee" });
+                        }
+                    }
+                    
                     return LocalRedirect(returnUrl);
                 }
                 if (result.RequiresTwoFactor)

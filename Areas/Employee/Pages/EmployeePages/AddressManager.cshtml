@@ -1,0 +1,135 @@
+@page
+@model ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages.AddressManagerModel
+@{
+    ViewData["Title"] = "Address Management";
+    Layout = "_EmployeeLayout";
+}
+
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Address Management</h4>
+            <a asp-page="./Addresses" class="btn btn-light"><i class="fas fa-plus"></i> Add New Address</a>
+        </div>
+        <div class="card-body">
+            @if (!string.IsNullOrEmpty(Model.StatusMessage))
+            {
+                <div class="alert @(Model.StatusMessage.StartsWith("Error") ? "alert-danger" : "alert-success") alert-dismissible fade show" role="alert">
+                    @Model.StatusMessage
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            @if (Model.EmployeeAddresses == null || !Model.EmployeeAddresses.Any())
+            {
+                <div class="alert alert-info">
+                    You don't have any saved addresses yet. Use the "Add New Address" button in the top right to add an address.
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col">Active</th>
+                                <th scope="col">Address Details</th>
+                                <th scope="col">City/District</th>
+                                <th scope="col">Neighborhood/Street</th>
+                                <th scope="col">Date Added</th>
+                                <th scope="col" class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var address in Model.EmployeeAddresses)
+                            {
+                                <tr>
+                                    <td>
+                                        <form method="post" asp-page-handler="SetActive" asp-route-addressId="@address.Id">
+                                            <div class="form-check">
+                                                <input class="form-check-input address-active-checkbox" 
+                                                       type="radio" 
+                                                       name="activeAddress" 
+                                                       value="@address.Id" 
+                                                       @(address.IsActive ? "checked" : "") 
+                                                       onchange="this.form.submit();" />
+                                            </div>
+                                        </form>
+                                    </td>
+                                    <td>
+                                        @if (address.Location != null)
+                                        {
+                                            @address.Location.DetailedAddress
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (address.Location != null)
+                                        {
+                                            @address.Location.CityName
+                                            @if (!string.IsNullOrEmpty(address.Location.DistrictName))
+                                            {
+                                                <span>/@address.Location.DistrictName</span>
+                                            }
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (address.Location != null)
+                                        {
+                                            @if (!string.IsNullOrEmpty(address.Location.NeighborhoodName))
+                                            {
+                                                @address.Location.NeighborhoodName
+                                            }
+                                            @if (!string.IsNullOrEmpty(address.Location.StreetName))
+                                            {
+                                                <br />@address.Location.StreetName
+                                            }
+                                        }
+                                    </td>
+                                    <td>@address.CreatedDate.ToString("dd.MM.yyyy")</td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-sm btn-danger" 
+                                                onclick="confirmDelete(@address.Id)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this address? This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" id="deleteForm" asp-page-handler="Delete">
+                    <input type="hidden" id="addressIdToDelete" name="addressId" value="" />
+                    <button type="submit" class="btn btn-danger">Yes, Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function confirmDelete(addressId) {
+            document.getElementById('addressIdToDelete').value = addressId;
+            var deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            deleteModal.show();
+        }
+    </script>
+}
