@@ -22,8 +22,16 @@
         }
         
         <div class="card-body">
+            <div class="validation-summary-error alert alert-danger d-none" id="validationSummary">
+                <h5 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>Form Hatası</h5>
+                <p>Lütfen aşağıdaki hataları düzeltin:</p>
+                <ul id="validationList">
+                </ul>
+            </div>
+
+            <div asp-validation-summary="ModelOnly" class="text-danger d-none"></div>
+            
             <form method="post" asp-page-handler="SaveAddress">
-                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                 @Html.AntiForgeryToken()
                 
                 @if (Model.EditingAddressId.HasValue)
@@ -32,16 +40,16 @@
                 }
 
                 <div class="form-group mb-3">
-                    <label asp-for="Input.Location.CityId" class="form-label"></label>
+                    <label asp-for="Input.Location.CityId" class="form-label"><i class="fas fa-city me-1"></i>City <span class="text-danger">*</span></label>
                     <select id="citySelect" name="Input.Location.CityId" class="form-select" asp-items="@(Model.Cities != null ? new SelectList(Model.Cities, "CityId", "CityName", Model.Input?.Location?.CityId) : null)" onchange="loadDistricts()">
                         <option value="">Select City</option>
                     </select>
                     <input type="hidden" id="cityNameInput" name="Input.Location.CityName" value="@(Model.Input?.Location?.CityName)" />
-                    <span asp-validation-for="Input.Location.CityId" class="text-danger"></span>
+                    <div class="invalid-feedback" id="cityError">Please select a city</div>
                 </div>
 
                 <div class="form-group mb-3">
-                    <label for="districtSelect" class="form-label">District</label>
+                    <label for="districtSelect" class="form-label"><i class="fas fa-map-marked me-1"></i>District <span class="text-danger">*</span></label>
                     <select id="districtSelect" name="Input.Location.DistrictName" class="form-select" onchange="loadNeighborhoods()">
                         <option value="">Select District</option>
                         @if (!string.IsNullOrEmpty(Model.Input?.Location?.DistrictName))
@@ -49,11 +57,11 @@
                             <option value="@Model.Input.Location.DistrictName" selected>@Model.Input.Location.DistrictName</option>
                         }
                     </select>
-                    <span asp-validation-for="Input.Location.DistrictName" class="text-danger"></span>
+                    <div class="invalid-feedback" id="districtError">Please select a district</div>
                 </div>
 
                 <div class="form-group mb-3">
-                    <label for="neighborhoodSelect" class="form-label">Neighborhood</label>
+                    <label for="neighborhoodSelect" class="form-label"><i class="fas fa-home me-1"></i>Neighborhood <span class="text-danger">*</span></label>
                     <select id="neighborhoodSelect" name="Input.Location.NeighborhoodName" class="form-select" onchange="loadStreets()">
                         <option value="">Select Neighborhood</option>
                         @if (!string.IsNullOrEmpty(Model.Input?.Location?.NeighborhoodName))
@@ -61,11 +69,11 @@
                             <option value="@Model.Input.Location.NeighborhoodName" selected>@Model.Input.Location.NeighborhoodName</option>
                         }
                     </select>
-                    <span asp-validation-for="Input.Location.NeighborhoodName" class="text-danger"></span>
+                    <div class="invalid-feedback" id="neighborhoodError">Please select a neighborhood</div>
                 </div>
 
                 <div class="form-group mb-3">
-                    <label for="streetSelect" class="form-label">Street</label>
+                    <label for="streetSelect" class="form-label"><i class="fas fa-road me-1"></i>Street</label>
                     <select id="streetSelect" name="Input.Location.StreetName" class="form-select">
                         <option value="">Select Street</option>
                         @if (!string.IsNullOrEmpty(Model.Input?.Location?.StreetName))
@@ -73,13 +81,13 @@
                             <option value="@Model.Input.Location.StreetName" selected>@Model.Input.Location.StreetName</option>
                         }
                     </select>
-                    <span asp-validation-for="Input.Location.StreetName" class="text-danger"></span>
+                    <div class="invalid-feedback" id="streetError">Please select a street</div>
                 </div>
 
                 <div class="form-group mb-3">
-                    <label asp-for="Input.Address" class="form-label"></label>
+                    <label asp-for="Input.Address" class="form-label"><i class="fas fa-info-circle me-1"></i>Detailed Address</label>
                     <textarea asp-for="Input.Address" class="form-control" rows="3" placeholder="Enter apartment number, floor, etc."></textarea>
-                    <span asp-validation-for="Input.Address" class="text-danger"></span>
+                    <div class="invalid-feedback" id="addressError">Please provide a detailed address</div>
                 </div>
 
                 <div class="form-check mb-3">
@@ -121,6 +129,63 @@
 
 @section Scripts {
     <script>
+        // Form validation
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form');
+            const validationSummary = document.getElementById('validationSummary');
+            const validationList = document.getElementById('validationList');
+            const requiredFields = [
+                { id: 'citySelect', name: 'City', errorId: 'cityError' },
+                { id: 'districtSelect', name: 'District', errorId: 'districtError' },
+                { id: 'neighborhoodSelect', name: 'Neighborhood', errorId: 'neighborhoodError' }
+            ];
+
+            form.addEventListener('submit', function(event) {
+                let isValid = true;
+                validationList.innerHTML = '';
+                
+                // Reset all fields
+                document.querySelectorAll('.form-select, .form-control').forEach(el => {
+                    el.classList.remove('is-invalid');
+                });
+
+                // Check required fields
+                requiredFields.forEach(field => {
+                    const element = document.getElementById(field.id);
+                    if (!element.value) {
+                        isValid = false;
+                        element.classList.add('is-invalid');
+                        const li = document.createElement('li');
+                        li.textContent = `${field.name} alanı zorunludur.`;
+                        validationList.appendChild(li);
+                    }
+                });
+
+                if (!isValid) {
+                    event.preventDefault();
+                    validationSummary.classList.remove('d-none');
+                    window.scrollTo(0, validationSummary.offsetTop - 20);
+                    
+                    // Show temporary alert for 2 seconds
+                    showTemporaryAlert('Please fill in all required fields', 'danger');
+                } else {
+                    validationSummary.classList.add('d-none');
+                }
+            });
+
+            // Add real-time validation
+            requiredFields.forEach(field => {
+                const element = document.getElementById(field.id);
+                element.addEventListener('change', function() {
+                    if (this.value) {
+                        this.classList.remove('is-invalid');
+                    } else {
+                        this.classList.add('is-invalid');
+                    }
+                });
+            });
+        });
+
         // Function to load districts based on selected city
         function loadDistricts() {
             const cityId = document.getElementById('citySelect').value;
@@ -294,6 +359,46 @@
                 }, 5000); // Auto-dismiss after 5 seconds
             }
         });
+        // Function to show a temporary alert that disappears after 2 seconds
+        function showTemporaryAlert(message, type = 'danger') {
+            // Create alert container if it doesn't exist
+            let alertContainer = document.getElementById('temporaryAlertContainer');
+            if (!alertContainer) {
+                alertContainer = document.createElement('div');
+                alertContainer.id = 'temporaryAlertContainer';
+                alertContainer.style.position = 'fixed';
+                alertContainer.style.top = '20px';
+                alertContainer.style.right = '20px';
+                alertContainer.style.zIndex = '9999';
+                document.body.appendChild(alertContainer);
+            }
+            
+            // Create the alert
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type} alert-dismissible fade show`;
+            alert.role = 'alert';
+            alert.innerHTML = `
+                <i class="fas fa-exclamation-circle me-2"></i>${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            
+            // Add the alert to the container
+            alertContainer.appendChild(alert);
+            
+            // Initialize Bootstrap alert
+            const bsAlert = new bootstrap.Alert(alert);
+            
+            // Auto-dismiss after 2 seconds
+            setTimeout(() => {
+                bsAlert.close();
+                // Remove the alert from DOM after fade out
+                setTimeout(() => {
+                    if (alert.parentNode === alertContainer) {
+                        alertContainer.removeChild(alert);
+                    }
+                }, 500); // Wait for fade out animation
+            }, 2000);
+        }
     </script>
     
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}

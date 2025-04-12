@@ -626,6 +626,7 @@ namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
 
                     await _context.SaveChangesAsync();
                     StatusMessage = "Address successfully updated.";
+                    return OnGetAsync(addressToUpdate.EmployeeAddressId).Result; 
                 }
                 else
                 {

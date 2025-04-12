@@ -11,29 +11,54 @@
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-dark bg-primary border-bottom box-shadow mb-3">
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-dark box-shadow mb-3" style="background: linear-gradient(135deg, #007bff, #0056b3);">
             <div class="container-fluid">
-                <a class="navbar-brand" asp-area="Employee" asp-page="/EmployeePages/HomePageEmp">Employee Dashboard</a>
+                <a class="navbar-brand d-flex align-items-center" asp-area="Employee" asp-page="/EmployeePages/HomePageEmp">
+                    <i class="fas fa-user-hard-hat me-2" style="font-size: 1.2rem;"></i> <span style="font-weight: 500;">Employee Dashboard</span>
+                </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-white" asp-area="Employee" asp-page="/EmployeePages/Addresses">Addresses</a>
+                        <li class="nav-item mx-1">
+                            <a class="nav-link text-white d-flex align-items-center py-2 px-3 rounded" 
+                               asp-area="Employee" asp-page="/EmployeePages/Addresses"
+                               style="transition: all 0.3s ease;" 
+                               onmouseover="this.style.backgroundColor='rgba(255,255,255,0.1)'" 
+                               onmouseout="this.style.backgroundColor='transparent'">
+                                <i class="fas fa-map-marker-alt me-2"></i> Addresses
+                            </a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-white" asp-area="Employee" asp-page="/EmployeePages/AddressManager">Address Management</a>
+                        <li class="nav-item mx-1">
+                            <a class="nav-link text-white d-flex align-items-center py-2 px-3 rounded" 
+                               asp-area="Employee" asp-page="/EmployeePages/AddressManager"
+                               style="transition: all 0.3s ease;" 
+                               onmouseover="this.style.backgroundColor='rgba(255,255,255,0.1)'" 
+                               onmouseout="this.style.backgroundColor='transparent'">
+                                <i class="fas fa-address-book me-2"></i> Address Management
+                            </a>
                         </li>
                     </ul>
                     <ul class="navbar-nav">
-                        <li class="nav-item">
-                            <a class="nav-link text-white" asp-area="Identity" asp-page="/Account/Manage/Index">Profile</a>
+                        <li class="nav-item mx-1">
+                            <a class="nav-link text-white d-flex align-items-center py-2 px-3 rounded" 
+                               asp-area="Identity" asp-page="/Account/Manage/Index"
+                               style="transition: all 0.3s ease;" 
+                               onmouseover="this.style.backgroundColor='rgba(255,255,255,0.1)'" 
+                               onmouseout="this.style.backgroundColor='transparent'">
+                                <i class="fas fa-user-circle me-2"></i> Profile
+                            </a>
                         </li>
-                        <li class="nav-item">
+                        <li class="nav-item mx-1">
                             <form method="post" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
-                                <button type="submit" class="nav-link btn btn-link text-white">Logout</button>
+                                <button type="submit" class="nav-link btn btn-link text-white d-flex align-items-center py-2 px-3 rounded"
+                                        style="transition: all 0.3s ease;" 
+                                        onmouseover="this.style.backgroundColor='rgba(255,255,255,0.1)'" 
+                                        onmouseout="this.style.backgroundColor='transparent'">
+                                    <i class="fas fa-sign-out-alt me-2"></i> Logout
+                                </button>
                             </form>
                         </li>
                     </ul>
