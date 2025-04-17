@@ -128,7 +128,7 @@ namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
             // Find the address with its associated location
             var address = await _context.EmployeeAddresses
                 .Include(e => e.Location)
-                .FirstOrDefaultAsync(a => a.EmployeeAddressId == addressId && a.EmployeeId == employee.Id);
+                .FirstOrDefaultAsync(a => a.Id == addressId && a.EmployeeId == employee.Id);
 
             if (address == null)
             {
@@ -166,7 +166,7 @@ namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
             
             // Check if the location is used by other employee addresses
             var otherAddressesWithSameLocation = await _context.EmployeeAddresses
-                .Where(a => a.EmployeeAddressId == address.EmployeeAddressId && a.Id != address.Id)
+                .Where(a => a.Id == address.Id && a.Id != address.Id)
                 .ToListAsync();
                 
             // If no other addresses use this location, delete it
@@ -264,7 +264,7 @@ namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
                 .Where(a => a.EmployeeId == employee.Id)
                 .ToListAsync();
 
-            var selectedAddress = addresses.FirstOrDefault(a => a.EmployeeAddressId == employeeAddressId);
+            var selectedAddress = addresses.FirstOrDefault(a => a.Id == employeeAddressId);
             if (selectedAddress == null)
             {
                 StatusMessage = "Error! Selected address not found.";

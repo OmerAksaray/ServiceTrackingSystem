@@ -23,7 +23,7 @@ namespace ServiceTrackingSystem.Models
                 .HasOne(ea => ea.Employee)
                 .WithMany(e => e.Addresses)
                 .HasForeignKey(ea => ea.EmployeeId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
             // EmployeeAddress-Location relationship
             // Each EmployeeAddress has one Location, and each Location can be associated with multiple EmployeeAddresses
@@ -31,7 +31,7 @@ namespace ServiceTrackingSystem.Models
                 .HasOne(ea => ea.Location)
                 .WithMany(l => l.EmployeeAddresses)
                 .HasForeignKey(ea => ea.LocationId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
             // Driver-RouteAssignment relationship
             builder.Entity<RouteAssignment>()

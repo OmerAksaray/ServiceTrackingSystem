@@ -122,7 +122,13 @@ namespace ServiceTrackingSystem.Areas.Driver.Pages.DriverPages
 
                 if (result.Succeeded)
                 {
+
+                    driver.DriverId = driver.Id;
+
+                    var updateResult = await _userManager.UpdateAsync(driver);
+
                     _logger.LogInformation("User created a new account with password.");
+
                     
                     // Ensure the role exists before adding the user to it
                     if (!await _roleManager.RoleExistsAsync("DRIVER"))
@@ -142,6 +148,8 @@ namespace ServiceTrackingSystem.Areas.Driver.Pages.DriverPages
                         values: new { area = "Identity", userId = userId, code = code, returnUrl = returnUrl },
                         protocol: Request.Scheme);
 
+
+
                     if (callbackUrl != null)
                     {
                         await _emailSender.SendEmailAsync(Input.Email, "Confirm your email",
@@ -155,7 +163,11 @@ namespace ServiceTrackingSystem.Areas.Driver.Pages.DriverPages
                     else
                     {
                         await _signInManager.SignInAsync(driver, isPersistent: false);
-                        return LocalRedirect(returnUrl);
+
+                        return RedirectToPage(
+                                               pageName: "/DriverPages/Dashboard",
+                                               routeValues: new { area = "Driver" }
+                                           );
                     }
                 }
                 foreach (var error in result.Errors)

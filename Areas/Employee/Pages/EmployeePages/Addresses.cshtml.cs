@@ -498,7 +498,7 @@ namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
             {
                 EditingAddressId = addressId;
                 
-                var addressToEdit = EmployeeAddresses.FirstOrDefault(a => a.EmployeeAddressId == addressId.Value);
+                var addressToEdit = EmployeeAddresses.FirstOrDefault(a => a.Id == addressId.Value);
                 if (addressToEdit != null)
                 {
                     Input = new InputModel
@@ -599,7 +599,7 @@ namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
                     _logger.LogInformation($"Updating existing address with ID: {addressId}");
                     var addressToUpdate = await _context.EmployeeAddresses
                         .Include(ea => ea.Location)
-                        .FirstOrDefaultAsync(ea => ea.EmployeeAddressId == addressId.Value && ea.EmployeeId == user.Id);
+                        .FirstOrDefaultAsync(ea => ea.Id == addressId.Value && ea.EmployeeId == user.Id);
 
                     if (addressToUpdate == null)
                     {
@@ -623,10 +623,11 @@ namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
                     // Set the active status (we already deactivated other addresses if needed)
                     addressToUpdate.IsActive = Input.IsActive;
                     addressToUpdate.UpdatedDate = DateTime.UtcNow;
+                    
 
                     await _context.SaveChangesAsync();
                     StatusMessage = "Address successfully updated.";
-                    return OnGetAsync(addressToUpdate.EmployeeAddressId).Result; 
+                    return OnGetAsync(addressToUpdate.Id).Result; 
                 }
                 else
                 {
@@ -650,22 +651,26 @@ namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
                     
                     // We need to save changes here to get the LocationId for the new record
                     await _context.SaveChangesAsync();
-                    _logger.LogInformation($"Created new location with ID: {location.LocationId}");
+                    _logger.LogInformation($"Created new location with ID: {location.Id}");
 
                     // Create the EmployeeAddress record linking the employee and the new location
                     var employeeAddress = new EmployeeAddress
                     {
                         EmployeeId = user.Id,
-                        LocationId = location.LocationId,
+                        LocationId = location.Id,
                         IsActive = Input.IsActive, // This will be true if user checked the active checkbox
                         CreatedDate = DateTime.UtcNow,
                         UpdatedDate = DateTime.UtcNow
                     };
                     _context.EmployeeAddresses.Add(employeeAddress);
                     await _context.SaveChangesAsync();
-                    _logger.LogInformation($"Created new employee address with ID: {employeeAddress.EmployeeAddressId}");
+                    _logger.LogInformation($"Created new employee address with ID: {employeeAddress.Id}");
+
+                    
 
                     StatusMessage = "New address successfully added.";
+
+                    return OnGetAsync(employeeAddress.Id).Result;
                 }
 
                 // Redirect to addresses page after successful save
@@ -710,7 +715,7 @@ namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
                 _logger.LogInformation($"Attempting to delete address with ID: {addressId}");
                 var address = await _context.EmployeeAddresses
                     .Include(a => a.Location)
-                    .FirstOrDefaultAsync(a => a.EmployeeAddressId == addressId && a.EmployeeId == user.Id);
+                    .FirstOrDefaultAsync(a => a.Id == addressId && a.EmployeeId == user.Id);
 
                 if (address != null)
                 {
@@ -739,7 +744,7 @@ namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
                             newActiveAddress.IsActive = true;
                             newActiveAddress.UpdatedDate = DateTime.UtcNow;
                             await _context.SaveChangesAsync();
-                            _logger.LogInformation($"Set address ID {newActiveAddress.EmployeeAddressId} as the new active address.");
+                            _logger.LogInformation($"Set address ID {newActiveAddress.Id} as the new active address.");
                         }
                     }
                     
@@ -786,7 +791,7 @@ namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
 
                 // Set the selected address as active
                 var addressToActivate = await _context.EmployeeAddresses
-                    .FirstOrDefaultAsync(a => a.EmployeeAddressId == addressId && a.EmployeeId == user.Id);
+                    .FirstOrDefaultAsync(a => a.Id == addressId && a.EmployeeId == user.Id);
 
                 if (addressToActivate != null)
                 {
@@ -833,7 +838,7 @@ namespace ServiceTrackingSystem.Areas.Employee.Pages.EmployeePages
                 // Find the address to set as active
                 var addressToSetActive = await _context.EmployeeAddresses
                     .Include(ea => ea.Location)
-                    .FirstOrDefaultAsync(ea => ea.EmployeeAddressId == addressId && ea.EmployeeId == user.Id);
+                    .FirstOrDefaultAsync(ea => ea.Id == addressId && ea.EmployeeId == user.Id);
 
                 if (addressToSetActive == null)
                 {

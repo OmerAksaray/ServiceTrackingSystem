@@ -9,6 +9,8 @@ namespace ServiceTrackingSystem.Models
         [NotMapped] 
         public int EmployeeId => Id;
 
+        public int? DriverId { get;  set; }
+
         public string UserType {  get; set; }
 
         [Required]

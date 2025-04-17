@@ -135,9 +135,12 @@ namespace ServiceTrackingSystem.Areas.Identity.Pages.Account
                         }
                         
                         // Kullanıcı tipine göre yönlendirme yap ve returnUrl'i her zaman görmezden gel
-                        if (user.UserType == "Driver")
+                        if (user.UserType == "DRIVER")
                         {
-                            return RedirectToPage("/DriverPages/Dashboard", new { area = "Driver" });
+                            return RedirectToPage(
+                                               pageName: "/DriverPages/Dashboard",
+                                               routeValues: new { area = "Driver" }
+                                           );
                         }
                         else if (user.UserType == "EMPLOYEE")
                         {

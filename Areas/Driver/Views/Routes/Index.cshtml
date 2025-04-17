@@ -1,0 +1,37 @@
+﻿@model IEnumerable<ServiceTrackingSystem.Models.Location>
+
+@{
+    ViewData["Title"] = "Route Assigment";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">Henüz size atanmış bir güzergah yok.</div>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Başlangıç</th>
+                <th>Bitiş</th>
+                <th>Tarih</th>
+                <!-- Diğer sütunlar -->
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.Id</td>
+                    <td>@item.DetailedAddress</td>
+                    <td>@item.StreetName</td>
+                    <td>@item.NeighborhoodName)</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

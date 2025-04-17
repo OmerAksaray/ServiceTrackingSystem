@@ -12,8 +12,8 @@ using ServiceTrackingSystem.Models;
 namespace ServiceTrackingSystem.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250306174926_AddIndexToNormalizedUserName")]
-    partial class AddIndexToNormalizedUserName
+    [Migration("20250417070116_RecreateDb")]
+    partial class RecreateDb
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -255,19 +255,19 @@ namespace ServiceTrackingSystem.Migrations
 
             modelBuilder.Entity("ServiceTrackingSystem.Models.EmployeeAddress", b =>
                 {
-                    b.Property<int>("EmployeeAddressId")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("EmployeeAddressId"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("EmployeeId")
+                    b.Property<int>("DriverId")
                         .HasColumnType("int");
 
-                    b.Property<int>("Id")
+                    b.Property<int>("EmployeeId")
                         .HasColumnType("int");
 
                     b.Property<bool>("IsActive")
@@ -279,7 +279,9 @@ namespace ServiceTrackingSystem.Migrations
                     b.Property<DateTime>("UpdatedDate")
                         .HasColumnType("datetime2");
 
-                    b.HasKey("EmployeeAddressId");
+                    b.HasKey("Id");
+
+                    b.HasIndex("DriverId");
 
                     b.HasIndex("EmployeeId");
 
@@ -290,11 +292,11 @@ namespace ServiceTrackingSystem.Migrations
 
             modelBuilder.Entity("ServiceTrackingSystem.Models.Location", b =>
                 {
-                    b.Property<int>("LocationId")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("LocationId"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("AddressLine")
                         .IsRequired()
@@ -319,15 +321,11 @@ namespace ServiceTrackingSystem.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("DetailedAddress")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("DistrictName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("Id")
-                        .HasColumnType("int");
 
                     b.Property<string>("NeighborhoodName")
                         .IsRequired()
@@ -340,7 +338,7 @@ namespace ServiceTrackingSystem.Migrations
                     b.Property<DateTime>("UpdatedDate")
                         .HasColumnType("datetime2");
 
-                    b.HasKey("LocationId");
+                    b.HasKey("Id");
 
                     b.ToTable("Locations");
                 });
@@ -388,13 +386,13 @@ namespace ServiceTrackingSystem.Migrations
                 {
                     b.HasBaseType("ServiceTrackingSystem.Models.ApplicationUser");
 
-                    b.Property<int?>("DriverId")
+                    b.Property<int?>("DriverId1")
                         .HasColumnType("int");
 
                     b.Property<int?>("RouteAssignmentId")
                         .HasColumnType("int");
 
-                    b.HasIndex("DriverId");
+                    b.HasIndex("DriverId1");
 
                     b.HasIndex("RouteAssignmentId");
 
@@ -454,17 +452,25 @@ namespace ServiceTrackingSystem.Migrations
 
             modelBuilder.Entity("ServiceTrackingSystem.Models.EmployeeAddress", b =>
                 {
+                    b.HasOne("ServiceTrackingSystem.Models.Driver", "Driver")
+                        .WithMany()
+                        .HasForeignKey("DriverId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("ServiceTrackingSystem.Models.Employee", "Employee")
                         .WithMany("Addresses")
                         .HasForeignKey("EmployeeId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("ServiceTrackingSystem.Models.Location", "Location")
                         .WithMany("EmployeeAddresses")
                         .HasForeignKey("LocationId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Driver");
 
                     b.Navigation("Employee");
 
@@ -486,7 +492,7 @@ namespace ServiceTrackingSystem.Migrations
                 {
                     b.HasOne("ServiceTrackingSystem.Models.Driver", "Driver")
                         .WithMany()
-                        .HasForeignKey("DriverId");
+                        .HasForeignKey("DriverId1");
 
                     b.HasOne("ServiceTrackingSystem.Models.RouteAssignment", "RouteAssignment")
                         .WithMany("Employees")

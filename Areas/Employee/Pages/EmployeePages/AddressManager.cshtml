@@ -52,7 +52,7 @@
                                             <div class="form-check form-switch d-flex justify-content-center">
                                                 <input type="checkbox" class="form-check-input custom-switch" 
                                                        name="employeeAddressId" 
-                                                       value="@address.EmployeeAddressId" 
+                                                       value="@address.Id" 
                                                        @(address.IsActive ? "checked" : "") 
                                                        onclick="handleCheckboxClick(this)" />
                                             </div>
@@ -90,10 +90,10 @@
                                         <td>@address.CreatedDate.ToString("dd.MM.yyyy")</td>
                                         <td class="text-center">
                                             <div class="btn-group">
-                                                <a href="/employee/addresses?addressId=@address.EmployeeAddressId" class="btn btn-sm btn-outline-primary">
+                                                <a href="/employee/addresses?addressId=@address.Id" class="btn btn-sm btn-outline-primary">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
-                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmDelete(@address.EmployeeAddressId)">
+                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmDelete(@address.Id)">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </div>

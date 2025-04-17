@@ -95,7 +95,13 @@
                         <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                             <ul class="navbar-nav flex-grow-1">
                                 <li class="nav-item">
-                                    <a class="nav-link text-white" asp-area="Driver" asp-page="/DriverPages/Routes">Routes</a>
+                                    <a class="nav-link text-white"
+                                       asp-area="Driver"
+                                       asp-controller="Routes"
+                                       asp-action="Index">
+                                        Routes
+                                    </a>
+
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link text-white" asp-area="Driver" asp-page="/DriverPages/Schedule">Schedule</a>

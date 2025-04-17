@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ServiceTrackingSystem.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class RecreateDb : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -30,24 +30,23 @@ namespace ServiceTrackingSystem.Migrations
                 name: "Locations",
                 columns: table => new
                 {
-                    LocationId = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     AddressLine = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     City = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CityId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CityId = table.Column<int>(type: "int", nullable: false),
                     CityName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     DistrictName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     NeighborhoodName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     StreetName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    DetailedAddress = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    DetailedAddress = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Country = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Id = table.Column<int>(type: "int", nullable: false),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Locations", x => x.LocationId);
+                    table.PrimaryKey("PK_Locations", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -131,7 +130,7 @@ namespace ServiceTrackingSystem.Migrations
                     UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Discriminator = table.Column<string>(type: "nvarchar(21)", maxLength: 21, nullable: false),
                     LicenseNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    DriverId = table.Column<int>(type: "int", nullable: true),
+                    DriverId1 = table.Column<int>(type: "int", nullable: true),
                     RouteAssignmentId = table.Column<int>(type: "int", nullable: true),
                     UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -152,8 +151,8 @@ namespace ServiceTrackingSystem.Migrations
                 {
                     table.PrimaryKey("PK_AspNetUsers", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_AspNetUsers_AspNetUsers_DriverId",
-                        column: x => x.DriverId,
+                        name: "FK_AspNetUsers_AspNetUsers_DriverId1",
+                        column: x => x.DriverId1,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id");
                 });
@@ -182,30 +181,36 @@ namespace ServiceTrackingSystem.Migrations
                 name: "EmployeeAddresses",
                 columns: table => new
                 {
-                    EmployeeAddressId = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     EmployeeId = table.Column<int>(type: "int", nullable: false),
                     LocationId = table.Column<int>(type: "int", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    Id = table.Column<int>(type: "int", nullable: false),
+                    DriverId = table.Column<int>(type: "int", nullable: false),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_EmployeeAddresses", x => x.EmployeeAddressId);
+                    table.PrimaryKey("PK_EmployeeAddresses", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_EmployeeAddresses_AspNetUsers_DriverId",
+                        column: x => x.DriverId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_EmployeeAddresses_AspNetUsers_EmployeeId",
                         column: x => x.EmployeeId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_EmployeeAddresses_Locations_LocationId",
                         column: x => x.LocationId,
                         principalTable: "Locations",
-                        principalColumn: "LocationId",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -263,9 +268,9 @@ namespace ServiceTrackingSystem.Migrations
                 column: "NormalizedEmail");
 
             migrationBuilder.CreateIndex(
-                name: "IX_AspNetUsers_DriverId",
+                name: "IX_AspNetUsers_DriverId1",
                 table: "AspNetUsers",
-                column: "DriverId");
+                column: "DriverId1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetUsers_RouteAssignmentId",
@@ -278,6 +283,11 @@ namespace ServiceTrackingSystem.Migrations
                 column: "NormalizedUserName",
                 unique: true,
                 filter: "[NormalizedUserName] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EmployeeAddresses_DriverId",
+                table: "EmployeeAddresses",
+                column: "DriverId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_EmployeeAddresses_EmployeeId",

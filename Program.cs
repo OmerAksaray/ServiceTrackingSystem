@@ -78,6 +78,10 @@ app.UseAuthorization();
 // Add our custom middleware to handle user type-based layouts
 app.UseUserTypeLayout();
 
+app.MapControllerRoute(
+    name: "areas",
+    pattern: "{area:exists}/{controller=Routes}/{action=Index}/{id?}"
+);
 // 📌 Varsayılan Route Tanımlama
 app.MapControllerRoute(
     name: "default",

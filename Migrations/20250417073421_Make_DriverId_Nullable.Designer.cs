@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ServiceTrackingSystem.Models;
 
@@ -11,9 +12,11 @@ using ServiceTrackingSystem.Models;
 namespace ServiceTrackingSystem.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250417073421_Make_DriverId_Nullable")]
+    partial class Make_DriverId_Nullable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -177,9 +180,6 @@ namespace ServiceTrackingSystem.Migrations
                         .IsRequired()
                         .HasMaxLength(21)
                         .HasColumnType("nvarchar(21)");
-
-                    b.Property<int?>("DriverId")
-                        .HasColumnType("int");
 
                     b.Property<string>("Email")
                         .HasMaxLength(256)
@@ -386,10 +386,13 @@ namespace ServiceTrackingSystem.Migrations
                 {
                     b.HasBaseType("ServiceTrackingSystem.Models.ApplicationUser");
 
+                    b.Property<int?>("DriverId1")
+                        .HasColumnType("int");
+
                     b.Property<int?>("RouteAssignmentId")
                         .HasColumnType("int");
 
-                    b.HasIndex("DriverId");
+                    b.HasIndex("DriverId1");
 
                     b.HasIndex("RouteAssignmentId");
 
@@ -485,7 +488,7 @@ namespace ServiceTrackingSystem.Migrations
                 {
                     b.HasOne("ServiceTrackingSystem.Models.Driver", "Driver")
                         .WithMany()
-                        .HasForeignKey("DriverId");
+                        .HasForeignKey("DriverId1");
 
                     b.HasOne("ServiceTrackingSystem.Models.RouteAssignment", "RouteAssignment")
                         .WithMany("Employees")

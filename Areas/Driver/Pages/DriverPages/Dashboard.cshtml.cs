@@ -6,6 +6,7 @@ using ServiceTrackingSystem.Models;
 
 namespace ServiceTrackingSystem.Areas.Driver.Pages.DriverPages
 {
+    [Area("Driver")]
     public class DashboardModel : PageModel
     {
         private readonly AppDbContext _context;
@@ -26,7 +27,7 @@ namespace ServiceTrackingSystem.Areas.Driver.Pages.DriverPages
             }
 
             // Check if the user is a driver
-            if (user.UserType != "Driver")
+            if (user.UserType != "DRIVER")
             {
                 return RedirectToPage("/Account/AccessDenied", new { area = "Identity" });
             }
