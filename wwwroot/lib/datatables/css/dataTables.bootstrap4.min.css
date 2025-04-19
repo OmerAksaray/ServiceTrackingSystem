@@ -1,0 +1,20 @@
+/* Minimal DataTables Bootstrap 4 integration */
+table.dataTable {
+  clear: both;
+  margin-top: 6px !important;
+  margin-bottom: 6px !important;
+  max-width: none !important;
+  border-collapse: separate !important;
+  border-spacing: 0;
+}
+
+table.dataTable td,
+table.dataTable th {
+  -webkit-box-sizing: content-box;
+  box-sizing: content-box;
+}
+
+.dataTables_wrapper {
+  position: relative;
+  clear: both;
+} 

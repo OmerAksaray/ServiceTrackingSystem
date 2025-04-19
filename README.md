@@ -58,3 +58,27 @@ The application will start and be accessible via the `BaseUrl` specified in `app
 ## Deployment
 
 Deployment instructions are not provided.  For deployment, you'll likely need to publish the application to a web server, configure the database connection string appropriately, and set up any necessary environment variables for email settings.
+
+## Handling Sensitive Data
+
+This project contains sensitive information such as API keys, connection strings, and passwords that should not be pushed to public repositories. Follow these steps to secure your sensitive data:
+
+1. **Never commit real credentials to GitHub**. The repository includes `appsettings.json.template` with placeholder values.
+
+2. For local development:
+   - Copy `appsettings.json.template` to `appsettings.json`
+   - Fill in your actual credentials in `appsettings.json`
+   - The `.gitignore` file is configured to exclude these files from Git
+
+3. For production deployment:
+   - Use environment variables or a secure secret management service
+   - For Azure, use Azure Key Vault or App Configuration
+   - For AWS, use AWS Secrets Manager
+   - For local servers, consider using environment variables
+
+4. If you accidentally committed sensitive data:
+   - Remove the sensitive data from your code
+   - Change any exposed credentials immediately
+   - Use tools like `git filter-branch` or the BFG Repo-Cleaner to remove sensitive data from Git history
+
+Remember that once data is pushed to a public repository, it should be considered compromised, even if you later remove it.

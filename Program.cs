@@ -29,6 +29,16 @@ builder.Services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, UserCla
 // HttpClient Factory ekleyelim - API istekleri için
 builder.Services.AddHttpClient();
 
+// Register Yandex Geocoder (add logger to the registration)
+builder.Services.AddHttpClient<YandexGeocoderService>();
+
+// Register our Google Maps services
+builder.Services.AddHttpClient<GoogleGeocodingService>();
+builder.Services.AddHttpClient<GoogleRoutingService>();
+builder.Services.AddScoped<IGeocodingService, GoogleGeocodingService>();
+builder.Services.AddScoped<IRoutingService, GoogleRoutingService>();
+
+
 // 📌 Çerez (Cookie) Yapılandırması
 builder.Services.ConfigureApplicationCookie(options =>
 {
@@ -51,6 +61,7 @@ builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
+
 
 var app = builder.Build();
 

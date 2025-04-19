@@ -1,0 +1,28 @@
+/* Minimal Font Awesome CSS for basic icon functionality */
+.fas {
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+  display: inline-block;
+  font-style: normal;
+  font-variant: normal;
+  text-rendering: auto;
+  line-height: 1;
+  font-family: "Font Awesome 5 Free";
+  font-weight: 900;
+}
+
+.fa-directions:before {
+  content: "\f5eb";
+}
+
+.fa-route:before {
+  content: "\f4d7";
+}
+
+.fa-arrow-left:before {
+  content: "\f060";
+}
+
+.fa-location-arrow:before {
+  content: "\f124";
+} 

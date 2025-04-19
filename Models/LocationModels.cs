@@ -17,6 +17,10 @@ namespace ServiceTrackingSystem.Models
         public string? DetailedAddress { get; set; }
         public string Country { get; set; }
         
+        // Koordinat alanları eklendi
+        public double? Latitude { get; set; }
+        public double? Longitude { get; set; }
+        
         // Navigation property - a location can be associated with multiple employee addresses
         public virtual ICollection<EmployeeAddress> EmployeeAddresses { get; set; } = new List<EmployeeAddress>();
     }

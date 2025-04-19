@@ -1,0 +1,28 @@
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=YOUR_SERVER;Database=YOUR_DATABASE;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True;Connect Timeout=300"
+  },
+  "ApplicationSettings": {
+    "BaseUrl": "http://localhost:5086"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "EmailSettings": {
+    "SmtpServer": "smtp.gmail.com",
+    "SmtpPort": 587,
+    "EmailFrom": "your-email@example.com",
+    "EmailPassword": "YOUR_EMAIL_PASSWORD"
+  },
+  "Yandex": {
+    "ApiKey": "YOUR_YANDEX_API_KEY",
+    "GeocoderKey": "YOUR_YANDEX_GEOCODER_KEY"
+  },
+  "Mapbox": {
+    "AccessToken": "YOUR_MAPBOX_ACCESS_TOKEN"
+  }
+} 
