@@ -1,0 +1,107 @@
+@model ServiceTrackingSystem.Models.Employee
+
+@{
+    ViewData["Title"] = "Employee Details";
+}
+
+<h1>Employee Details</h1>
+
+<div class="card">
+    <div class="card-header">
+        <h4>@Model.Name @Model.Surname</h4>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <dl class="row">
+                    <dt class="col-sm-4">Name:</dt>
+                    <dd class="col-sm-8">@Model.Name</dd>
+                    
+                    <dt class="col-sm-4">Surname:</dt>
+                    <dd class="col-sm-8">@Model.Surname</dd>
+                    
+                    <dt class="col-sm-4">Email:</dt>
+                    <dd class="col-sm-8">@Model.Email</dd>
+                    
+                    <dt class="col-sm-4">Phone Number:</dt>
+                    <dd class="col-sm-8">@Model.PhoneNumber</dd>
+                    
+                    <dt class="col-sm-4">Created Date:</dt>
+                    <dd class="col-sm-8">@Model.CreatedDate.ToString("dd/MM/yyyy")</dd>
+                    
+                    <dt class="col-sm-4">Last Updated:</dt>
+                    <dd class="col-sm-8">@Model.UpdatedDate.ToString("dd/MM/yyyy")</dd>
+                </dl>
+            </div>
+            <div class="col-md-6">
+                <dl class="row">
+                    <dt class="col-sm-4">Assigned Driver:</dt>
+                    <dd class="col-sm-8">
+                        @if (Model.Driver != null)
+                        {
+                            @($"{Model.Driver.Name} {Model.Driver.Surname}")
+                        }
+                        else
+                        {
+                            <span class="text-muted">Not assigned</span>
+                        }
+                    </dd>
+                    
+                    <dt class="col-sm-4">Route Assignment:</dt>
+                    <dd class="col-sm-8">
+                        @if (Model.RouteAssignment != null)
+                        {
+                            <span>Route on @Model.RouteAssignment.RouteDate.ToString("dd/MM/yyyy")</span>
+                        }
+                        else
+                        {
+                            <span class="text-muted">Not assigned to a route</span>
+                        }
+                    </dd>
+                </dl>
+            </div>
+        </div>
+        
+        @if (Model.Addresses != null && Model.Addresses.Any())
+        {
+            <h5 class="mt-4">Addresses</h5>
+            <table class="table table-sm table-bordered">
+                <thead>
+                    <tr>
+                        <th>Address</th>
+                        <th>Location</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var address in Model.Addresses)
+                    {
+                        <tr>
+                            <td>@address.AddressText</td>
+                            <td>
+                                @if (address.Location != null)
+                                {
+                                    @if (!string.IsNullOrEmpty(address.Location.Name))
+                                    {
+                                        @address.Location.Name
+                                    }
+                                    else
+                                    {
+                                        @($"{address.Location.AddressLine}, {address.Location.City} ({address.Location.Latitude}, {address.Location.Longitude})")
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-muted">No location data</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+    <div class="card-footer">
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>
+        <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+    </div>
+</div> 

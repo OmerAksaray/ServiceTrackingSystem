@@ -6,6 +6,7 @@ namespace ServiceTrackingSystem.Models
 {
     public class Location : BaseEntity
     {
+        public string Name { get; set; }
         
         public string AddressLine { get; set; }
         public string City { get; set; }

@@ -1,0 +1,108 @@
+@model ServiceTrackingSystem.Models.RouteAssignment
+
+@{
+    ViewData["Title"] = "Route Assignment Details";
+}
+
+<h1>Route Assignment Details</h1>
+
+<div class="card">
+    <div class="card-header">
+        <h4>Route Assignment #@Model.Id</h4>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <dl class="row">
+                    <dt class="col-sm-4">ID:</dt>
+                    <dd class="col-sm-8">@Model.Id</dd>
+                    
+                    <dt class="col-sm-4">Route Date:</dt>
+                    <dd class="col-sm-8">@Model.RouteDate.ToString("dd/MM/yyyy")</dd>
+                </dl>
+                
+                <div class="card mt-3">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">Driver Information</h5>
+                    </div>
+                    <div class="card-body">
+                        @if (Model.Driver != null)
+                        {
+                            <dl class="row">
+                                <dt class="col-sm-4">Name:</dt>
+                                <dd class="col-sm-8">@Model.Driver.Name @Model.Driver.Surname</dd>
+                                
+                                <dt class="col-sm-4">Email:</dt>
+                                <dd class="col-sm-8">@Model.Driver.Email</dd>
+                                
+                                <dt class="col-sm-4">Phone:</dt>
+                                <dd class="col-sm-8">@Model.Driver.PhoneNumber</dd>
+                                
+                                <dt class="col-sm-4">License:</dt>
+                                <dd class="col-sm-8">@Model.Driver.LicenseNumber</dd>
+                            </dl>
+                            
+                            <a asp-controller="Drivers" asp-action="Details" asp-route-id="@Model.DriverId" 
+                               class="btn btn-sm btn-outline-info">View Driver Details</a>
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning">
+                                <p>No driver assigned to this route.</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Assigned Employees</h5>
+                    </div>
+                    <div class="card-body">
+                        @if (Model.Employees != null && Model.Employees.Any())
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Email</th>
+                                            <th>Phone</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var employee in Model.Employees)
+                                        {
+                                            <tr>
+                                                <td>@employee.Name @employee.Surname</td>
+                                                <td>@employee.Email</td>
+                                                <td>@employee.PhoneNumber</td>
+                                                <td>
+                                                    <a asp-controller="Employees" asp-action="Details" asp-route-id="@employee.Id" 
+                                                       class="btn btn-sm btn-outline-info">View</a>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning">
+                                <p>No employees assigned to this route.</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card-footer">
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>
+        <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+    </div>
+</div> 

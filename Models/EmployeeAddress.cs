@@ -7,6 +7,7 @@ namespace ServiceTrackingSystem.Models
 {
     public class EmployeeAddress : BaseEntity
     {
+        public string AddressText { get; set; } // Added AddressText property for display
 
         public int? EmployeeId { get; set; }
         public virtual Employee Employee { get; set; }

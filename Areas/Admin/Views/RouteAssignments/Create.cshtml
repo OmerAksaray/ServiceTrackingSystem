@@ -1,0 +1,82 @@
+@model ServiceTrackingSystem.Areas.Admin.Controllers.RouteAssignmentViewModel
+
+@{
+    ViewData["Title"] = "Create Route Assignment";
+}
+
+<h1><i class="bi bi-map"></i> Create New Route Assignment</h1>
+
+<div class="row">
+    <div class="col-md-8">
+        <form asp-action="Create">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            
+            <div class="form-group">
+                <label asp-for="DriverId" class="control-label"><i class="bi bi-truck"></i> Driver</label>
+                <select asp-for="DriverId" asp-items="ViewBag.Drivers" class="form-select">
+                    <option value="">-- Select Driver --</option>
+                </select>
+                <span asp-validation-for="DriverId" class="text-danger"></span>
+            </div>
+            
+            <div class="form-group mt-3">
+                <label asp-for="RouteDate" class="control-label"><i class="bi bi-calendar"></i> Route Date</label>
+                <input asp-for="RouteDate" class="form-control" type="date" />
+                <span asp-validation-for="RouteDate" class="text-danger"></span>
+            </div>
+            
+            <div class="form-group mt-3">
+                <label class="control-label"><i class="bi bi-people"></i> Select Employees</label>
+                <div class="mb-2">
+                    <button type="button" id="selectAll" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-check-all"></i> Select All
+                    </button>
+                    <button type="button" id="deselectAll" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-x-lg"></i> Deselect All
+                    </button>
+                </div>
+                <div class="card">
+                    <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                        <div class="row">
+                            @for (int i = 0; i < Model.Employees.Count; i++)
+                            {
+                                <div class="col-md-6 mb-2">
+                                    <div class="form-check">
+                                        <input type="hidden" asp-for="@Model.Employees[i].Id" />
+                                        <input type="hidden" asp-for="@Model.Employees[i].FullName" />
+                                        <input class="form-check-input employee-checkbox" asp-for="@Model.Employees[i].IsSelected" />
+                                        <label class="form-check-label" asp-for="@Model.Employees[i].IsSelected">
+                                            @Model.Employees[i].FullName
+                                        </label>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group mt-4">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> Create</button>
+                <a asp-action="Index" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Back to List</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        $(document).ready(function() {
+            // Select All button
+            $("#selectAll").click(function() {
+                $(".employee-checkbox").prop("checked", true);
+            });
+            
+            // Deselect All button
+            $("#deselectAll").click(function() {
+                $(".employee-checkbox").prop("checked", false);
+            });
+        });
+    </script>
+} 

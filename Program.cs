@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
+using ServiceTrackingSystem.Areas.Admin;
 using ServiceTrackingSystem.Models;
 using ServiceTrackingSystem.Services;
 
@@ -65,6 +66,23 @@ builder.Services.AddRazorPages();
 
 var app = builder.Build();
 
+// Seed admin user
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+        var roleManager = services.GetRequiredService<RoleManager<IdentityRole<int>>>();
+        await AdminSeedData.SeedAdminUser(userManager, roleManager);
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while seeding the database with admin user.");
+    }
+}
+
 // 📌 Hata Sayfası ve HSTS (Production Modu İçin)
 if (app.Environment.IsDevelopment())
 {
@@ -91,7 +109,7 @@ app.UseUserTypeLayout();
 
 app.MapControllerRoute(
     name: "areas",
-    pattern: "{area:exists}/{controller=Routes}/{action=Index}/{id?}"
+    pattern: "{area:exists}/{controller=Home}/{action=Index}/{id?}"
 );
 // 📌 Varsayılan Route Tanımlama
 app.MapControllerRoute(

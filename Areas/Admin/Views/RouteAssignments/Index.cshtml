@@ -1,0 +1,83 @@
+@model IEnumerable<ServiceTrackingSystem.Models.RouteAssignment>
+
+@{
+    ViewData["Title"] = "Route Assignments";
+}
+
+<h1><i class="bi bi-map"></i> Route Assignments Management</h1>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary"><i class="bi bi-plus-circle"></i> Create New Route Assignment</a>
+</p>
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead class="thead-dark">
+            <tr>
+                <th><i class="bi bi-hash"></i> ID</th>
+                <th><i class="bi bi-truck"></i> Driver</th>
+                <th><i class="bi bi-calendar"></i> Route Date</th>
+                <th><i class="bi bi-people"></i> Assigned Employees</th>
+                <th><i class="bi bi-gear"></i> Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.Id</td>
+                    <td>
+                        @if (item.Driver != null)
+                        {
+                            <a asp-controller="Drivers" asp-action="Details" asp-route-id="@item.DriverId">
+                                @($"{item.Driver.Name} {item.Driver.Surname}")
+                            </a>
+                        }
+                        else
+                        {
+                            <span class="text-muted">Not assigned</span>
+                        }
+                    </td>
+                    <td>@item.RouteDate.ToString("dd/MM/yyyy")</td>
+                    <td>
+                        @if (item.Employees != null && item.Employees.Any(e => e.RouteAssignmentId == item.Id))
+                        {
+                            var employees = item.Employees.Where(e => e.RouteAssignmentId == item.Id).ToList();
+                            <span class="badge bg-info">@employees.Count Employees</span>
+                            <button class="btn btn-sm btn-outline-info" type="button" 
+                                    data-bs-toggle="collapse" data-bs-target="#employeeList-@item.Id" 
+                                    aria-expanded="false" aria-controls="employeeList-@item.Id">
+                                <i class="bi bi-eye"></i> Show
+                            </button>
+                            <div class="collapse mt-2" id="employeeList-@item.Id">
+                                <div class="card card-body">
+                                    <ul class="list-group list-group-flush">
+                                        @foreach (var employee in employees)
+                                        {
+                                            <li class="list-group-item">
+                                                <a asp-controller="Employees" asp-action="Details" asp-route-id="@employee.Id">
+                                                    <i class="bi bi-person"></i> @($"{employee.Name} {employee.Surname}")
+                                                </a>
+                                            </li>
+                                        }
+                                    </ul>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <span class="text-muted">No employees assigned</span>
+                        }
+                    </td>
+                    <td>
+                        <div class="btn-group" role="group">
+                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning"><i class="bi bi-pencil"></i></a>
+                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info"><i class="bi bi-info-circle"></i></a>
+                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></a>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div> 
